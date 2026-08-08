@@ -1,0 +1,5 @@
+// This file configures TypeScript for the config package.
+{
+  "extends": "../../tsconfig.base.json",
+  "include": ["src"]
+}

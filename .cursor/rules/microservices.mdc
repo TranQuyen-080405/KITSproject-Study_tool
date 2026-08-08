@@ -1,0 +1,14 @@
+---
+description: Apply microservice communication rules for this repository.
+alwaysApply: true
+---
+
+# Microservice Communication
+
+- Use Gateway-routed REST for synchronous request/response work.
+- Use RabbitMQ domain events for asynchronous cross-service side effects.
+- Never query or mutate another service's database directly.
+- Learning events are consumed by Analytics; Analytics builds its own read model.
+- Give inter-service HTTP calls explicit timeout and failure handling when they are implemented.
+- Make event consumers idempotent before adding retry or dead-letter handling.
+- Do not introduce Saga, Outbox, or Circuit Breaker infrastructure until a concrete flow requires it.

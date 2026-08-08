@@ -1,0 +1,9 @@
+﻿// This file configures TypeScript for the Mobile Client.
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "outDir": "dist"
+  },
+  "include": ["src"]
+}

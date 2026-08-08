@@ -1,0 +1,12 @@
+# This Dockerfile is the shared development image template for TypeScript client apps.
+FROM node:22-alpine
+
+WORKDIR /workspace
+
+COPY package.json pnpm-workspace.yaml ./
+COPY apps ./apps
+COPY packages ./packages
+
+RUN corepack enable && pnpm install --no-frozen-lockfile
+
+CMD ["sh"]

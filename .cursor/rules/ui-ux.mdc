@@ -1,0 +1,49 @@
+---
+description: UI/UX rules for the Korean learning web and mobile clients.
+globs: "{apps/web/**/*.{tsx,ts,css},apps/mobile/**/*.{tsx,ts}}"
+alwaysApply: false
+---
+
+# UI/UX — Korean Learning Clients
+
+Apply when changing `apps/web` or `apps/mobile`. Keep UI calm, readable, and study-focused — not a marketing dashboard.
+
+## Product UX
+
+- Primary jobs: browse sets, study cards, mark mastered / not mastered, review due cards, show progress.
+- One clear action per screen when possible (Study, Review, Create set).
+- Always design loading, empty, error, and success states for learning flows.
+- Flashcard study needs fast feedback (correct/incorrect or mastered toggle) without clutter.
+- Prefer confirmation before destructive actions (delete set/card).
+
+## Visual hierarchy
+
+- Establish a small design token set before inventing one-off styles: background, foreground, muted, primary, success, warning, error.
+- Clear type scale: title → section → body → caption. Titles tighter tracking; body comfortable line-height.
+- Use one primary accent + neutrals + status colors. High contrast (WCAG AA).
+- Spacing on a consistent 4px scale. Prefer flex/grid alignment; no accidental horizontal scroll on mobile.
+- Mobile-first layouts. Web and mobile should share the same information hierarchy even if components differ.
+- First viewport / key screens: brand or product name readable, one headline, one short support line, one primary CTA group — avoid packing stats, promos, and secondary widgets into the hero.
+- Default to no decorative cards. Use card-like containers only when they group a real interaction (e.g. a flashcard).
+
+## Avoid default AI look
+
+- Do not default to purple-on-white / purple-indigo gradients, cream+terracotta “editorial” themes, or dense broadsheet layouts.
+- Avoid Inter/Roboto/Arial/system-only stacks when introducing fonts; pick purposeful type for a language-learning product.
+- Avoid glow stacks, rounded-full pill clusters, emoji decoration, and multi-layer shadow noise.
+
+## Interaction & a11y
+
+- Interactive controls need hover (web), focus-visible, and pressed/active states with short transitions (~150–200ms).
+- Async actions: disable or show progress on submit; use skeletons for list/content fetch; empty states need short copy + next action.
+- Prefer toast or inline status for save/study errors — never silent failure.
+- Semantic structure (`header`, `main`, `nav`, `button`). Icon-only controls need accessible names.
+- Keyboard reachable on web; touch targets large enough on mobile.
+
+## Frontend architecture
+
+- Inspect existing tokens/components first; reuse before adding new primitives (Button, Input, Flashcard, EmptyState).
+- Keep components small and single-purpose. No inline style sprawl; prefer shared tokens/CSS modules/Tailwind tokens if introduced later.
+- If Tailwind is added: prefer scale utilities over arbitrary values; use a `cn()` helper for conditional classes; one icon set at consistent sizes.
+- Typed React/TSX only. Do not invent a large UI kit or design-system package unless requested.
+- Clients talk to the API Gateway only — do not hard-wire service URLs into UI components.

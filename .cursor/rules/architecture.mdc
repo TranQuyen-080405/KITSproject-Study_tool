@@ -1,0 +1,13 @@
+---
+description: Preserve the Korean-learning system boundaries and ownership model.
+alwaysApply: true
+---
+
+# Architecture Boundaries
+
+- Keep Web and Mobile as clients; external traffic enters through API Gateway.
+- Preserve service ownership: User, Content, Learning, AI, and Analytics own separate domains.
+- Each business service owns its API, business logic, Prisma schema, and PostgreSQL database.
+- Do not add shared databases, shared Prisma clients, or shared business-logic packages.
+- Put code in the service that owns the domain; coordinate through explicit APIs or events.
+- Update `docs/architecture/` when a service boundary or communication path changes.

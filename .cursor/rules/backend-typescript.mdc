@@ -1,0 +1,14 @@
+---
+description: Keep backend TypeScript and Express code layered by responsibility.
+globs: apps/**/src/**/*.ts
+alwaysApply: false
+---
+
+# Backend TypeScript
+
+- Keep the flow: routes → controllers → services → repositories → database.
+- Routes define endpoints; controllers translate HTTP; services hold domain logic; repositories access persistence.
+- Do not put SQL, Prisma queries, or domain calculations in controllers.
+- Keep framework code at the edge; do not leak Express request/response objects into service methods.
+- Validate external input at the HTTP boundary before it reaches business logic.
+- Use explicit TypeScript types and keep modules focused on one responsibility.

@@ -1,0 +1,15 @@
+{
+  "name": "korean-learning-app",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@10.14.0",
+  "scripts": {
+    "typecheck": "corepack pnpm --recursive run typecheck",
+    "test": "corepack pnpm --recursive run test",
+    "log": "node scripts/append-change-log.mjs"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  }
+}

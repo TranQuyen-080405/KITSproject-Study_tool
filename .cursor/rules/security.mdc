@@ -1,0 +1,14 @@
+---
+description: Apply baseline security practices to backend HTTP code.
+globs: apps/**/src/**/*.ts
+alwaysApply: false
+---
+
+# Backend Security
+
+- Treat HTTP input, headers, tokens, and message payloads as untrusted.
+- Validate and normalize input before use; never interpolate untrusted input into queries.
+- Keep secrets in environment variables; never hard-code passwords, JWT secrets, or LLM keys.
+- Authenticate before authorization; enforce ownership checks for user-scoped resources.
+- Return safe client errors and avoid exposing stack traces, credentials, or internal database details.
+- Add rate limiting and restrictive CORS deliberately when public endpoints are introduced.

@@ -1,0 +1,92 @@
+# This file defines the future local microservices development topology.
+services:
+  api-gateway:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile.service
+    command: ["pnpm", "--filter", "@korean-learning/api-gateway", "dev"]
+    ports:
+      - "3000:3000"
+
+  user-service:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile.service
+    command: ["pnpm", "--filter", "@korean-learning/user-service", "dev"]
+
+  content-service:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile.service
+    command: ["pnpm", "--filter", "@korean-learning/content-service", "dev"]
+
+  learning-service:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile.service
+    command: ["pnpm", "--filter", "@korean-learning/learning-service", "dev"]
+
+  ai-service:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile.service
+    command: ["pnpm", "--filter", "@korean-learning/ai-service", "dev"]
+
+  analytics-service:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile.service
+    command: ["pnpm", "--filter", "@korean-learning/analytics-service", "dev"]
+
+  rabbitmq:
+    image: rabbitmq:4-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  user-postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: user_service
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - user-postgres-data:/var/lib/postgresql/data
+
+  content-postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: content_service
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - content-postgres-data:/var/lib/postgresql/data
+
+  learning-postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: learning_service
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - learning-postgres-data:/var/lib/postgresql/data
+
+  ai-postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: ai_service
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - ai-postgres-data:/var/lib/postgresql/data
+
+  analytics-postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: analytics_service
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - analytics-postgres-data:/var/lib/postgresql/data
+
+volumes:
+  user-postgres-data:
+  content-postgres-data:
+  learning-postgres-data:
+  ai-postgres-data:
+  analytics-postgres-data:

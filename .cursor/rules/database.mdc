@@ -1,0 +1,14 @@
+---
+description: Preserve PostgreSQL and Prisma ownership boundaries per service.
+globs: apps/**/prisma/**/*.prisma
+alwaysApply: false
+---
+
+# Database Ownership
+
+- Keep one Prisma schema and one database URL per business service.
+- Add models only to the service that owns their lifecycle and writes.
+- Repositories are the only layer that performs Prisma/database access.
+- Use migrations for schema changes; do not rely on manual production database edits.
+- Add indexes and transaction boundaries only when query patterns or consistency requirements justify them.
+- Never connect one service to another service's database URL.

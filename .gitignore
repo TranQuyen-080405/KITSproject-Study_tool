@@ -1,0 +1,8 @@
+# This file excludes generated local dependencies, builds, logs, and secrets.
+node_modules/
+dist/
+.expo/
+.env
+.env.local
+*.log
+coverage/

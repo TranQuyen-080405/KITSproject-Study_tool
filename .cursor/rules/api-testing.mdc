@@ -1,0 +1,14 @@
+---
+description: Require stable HTTP contracts, validation, and focused tests.
+globs: apps/**/src/**/*.ts
+alwaysApply: false
+---
+
+# API and Testing
+
+- Design REST endpoints around resources and explicit request/response contracts.
+- Validate request data at the boundary and return consistent error shapes.
+- Treat externally consumed response fields as contracts; version or coordinate breaking changes.
+- Add focused unit tests for non-trivial domain logic and integration tests for repository/API behavior.
+- Keep tests inside the owning service; do not test through another service's database.
+- Prefer the smallest test that proves the behavior; do not add fixtures or mocks without need.

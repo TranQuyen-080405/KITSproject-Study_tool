@@ -1,0 +1,4 @@
+# This file defines the packages included in the monorepo workspace.
+packages:
+  - "apps/*"
+  - "packages/*"

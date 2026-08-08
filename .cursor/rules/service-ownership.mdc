@@ -1,0 +1,50 @@
+---
+description: Feature placement by service ownership and pre-change checklist.
+alwaysApply: true
+---
+
+# Service Ownership & Work Checklist
+
+Use this before writing code. Clients show UI; services own data and business rules.
+
+## Where does this feature go?
+
+| Concern | Put it in |
+| --- | --- |
+| Pages, forms, flashcard UI, loading/error | `apps/web` or `apps/mobile` |
+| Public entry, route to the right service | `apps/api-gateway` |
+| Auth, profile, learning preferences | `apps/user-service` |
+| Sets, flashcards, vocabulary content | `apps/content-service` |
+| Study sessions, mastered/not mastered, SRS, progress | `apps/learning-service` |
+| LLM calls, AI-generated explanations | `apps/ai-service` |
+| Dashboard stats, derived analytics | `apps/analytics-service` |
+
+## Layer rules inside a service
+
+```text
+routes → controllers → services → repositories → Prisma/DB
+                              ↘ events (Learning → Analytics later)
+```
+
+- UI never talks to a service DB and never hard-wires service URLs — Gateway only.
+- Do not put SRS/auth/persistence logic in the web client.
+- Do not put React/UI in a `*-service`.
+- One domain per service. Example: “mark mastered” → Learning, not Content.
+- Never read/write another service’s database; use Gateway REST or RabbitMQ events.
+
+## Checklist before / while changing code
+
+1. **Ownership** — Which single service (or client) owns this? Wrong folder → stop and move.
+2. **Boundary** — Am I touching another service’s DB, Prisma, or business logic? If yes, redesign.
+3. **Client vs server** — UI in web/mobile; API + rules + DB in the owning service.
+4. **Path** — Browser/mobile → Gateway → owning service (not direct service URL).
+5. **Shape** — New endpoint follows routes → controllers → services → repositories.
+6. **Schema** — DB changes only in that service’s `prisma/`; no shared Prisma client.
+7. **Events** — Cross-service side effects (e.g. Learning → Analytics) use events, not shared tables.
+8. **Docs** — If ownership or communication path changes, update `docs/architecture/`.
+9. **Scope** — Prefer one vertical slice (one feature through client + one service); do not open all six services at once.
+10. **Verify** — Typecheck/test the touched package; for API work, confirm request/response and error paths.
+
+## Suggested build order
+
+Skeleton → User (auth) → Content (flashcards) → Learning (SRS) → AI → Analytics → observability/deploy.

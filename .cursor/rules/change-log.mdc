@@ -1,0 +1,58 @@
+---
+description: Append large changes to docs/log.md using coderName from developer.config.json.
+alwaysApply: true
+---
+
+# Change Log (docs/log.md)
+
+After every **large** change in this repo, append one entry to `docs/log.md`. Do not skip this step.
+
+## What counts as large
+
+Log when any of these happen:
+
+- New feature, new screen/API/service endpoint, or new rule/doc that changes how the team works
+- Multi-file refactor, schema change, or architecture/boundary change
+- Anything that would matter to another teammate reading history later
+
+Do **not** log: typo fixes, one-line renames, comment-only edits, or tiny style tweaks.
+
+## Coder name
+
+1. Read `developer.config.json` at the repo root.
+2. Use the `coderName` field as the entry title name.
+3. If `coderName` is missing or empty, stop and ask the user to set it in `developer.config.json` before writing the log.
+
+Never invent a teammate’s name. Never hard-code a name in the rule.
+
+## How to write the entry
+
+Do **not** run `Get-Date` or hand-write the header. Call:
+
+```bash
+corepack pnpm log "<mô tả phần thêm / sửa>" "<chức năng đó làm gì>"
+```
+
+This runs `scripts/append-change-log.mjs` → `appendChangeLog(changeDescription, capabilityDescription)`, which reads `coderName` from `developer.config.json`, stamps local `YYYY-MM-DD HH:mm`, and appends to `docs/log.md`.
+
+Newest entry always goes **below** older ones.
+
+```markdown
+--- {coderName} <YYYY-MM-DD HH:mm>------
+- {what was added / changed}
+- {what the new or changed capability does}
+----------------------------------------
+```
+
+Rules for bullets:
+
+- Vietnamese is fine if the user works in Vietnamese.
+- Each bullet: concrete (files/areas + purpose), not vague (“update code”).
+- One related change = one `pnpm log` call (exactly two inputs).
+
+## Checklist before finishing a large task
+
+1. Is this change large? If yes → must log.
+2. Is `coderName` set in `developer.config.json`?
+3. Run `corepack pnpm log "..."` / `"..."` (do not overwrite older entries).
+4. Timestamp is filled by the script (local 24h clock).

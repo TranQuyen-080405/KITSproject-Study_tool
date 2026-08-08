@@ -1,0 +1,8 @@
+﻿// This file configures TypeScript for the AI Service.
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist"
+  },
+  "include": ["src", "tests"]
+}

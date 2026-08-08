@@ -1,0 +1,14 @@
+---
+description: Keep local Docker Compose development configuration minimal and runnable.
+globs: "{docker-compose.yml,infrastructure/docker/**}"
+alwaysApply: false
+---
+
+# Docker and Local Development
+
+- Keep Docker Compose focused on local development, not production orchestration.
+- Preserve separate PostgreSQL containers and volumes for each business service.
+- Configure service-to-service addresses through environment variables, not localhost assumptions inside containers.
+- Add health checks and graceful shutdown only when services actually listen for traffic.
+- Do not add orchestration, CI/CD, or deployment tooling unless the task requires it.
+- Keep Dockerfiles small, reproducible, and aligned with the pnpm workspace layout.

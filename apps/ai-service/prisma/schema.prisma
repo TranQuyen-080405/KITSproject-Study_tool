@@ -1,0 +1,11 @@
+﻿// This Prisma schema will define the database owned by the AI Service.
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("AI_DATABASE_URL")
+}
+
+// TODO: Add only models owned by this service.
