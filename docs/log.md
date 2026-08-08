@@ -70,3 +70,8 @@ Format mỗi mục (do script tạo):
 - Thêm scripts/append-change-log.mjs + script root pnpm log; cập nhật change-log.mdc và hướng dẫn trong docs/log.md.
 - Gọi appendChangeLog(mô tả, chức năng) hoặc corepack pnpm log để tự ghi coderName + thời gian local vào cuối docs/log.md, không cần Get-Date thủ công.
 ----------------------------------------
+
+--- Trần Quyền <2026-08-08 22:20>------
+- Thêm docs/team-roadmap-7-people.md: phân 7 workstream ownership, deliverable, handoff, Definition of Done và roadmap 12 tuần Web MVP → AI/event analytics → mobile/hardening.
+- Team có lộ trình end-to-end để làm song song mà vẫn theo Gateway, database-per-service và Learning event → Analytics read model.
+----------------------------------------
