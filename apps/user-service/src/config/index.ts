@@ -1,2 +1,3 @@
-﻿// This file will load configuration for the User Service.
-export {};
+﻿export const userServiceConfig = {
+  port: Number(process.env.USER_SERVICE_PORT ?? 3001),
+};

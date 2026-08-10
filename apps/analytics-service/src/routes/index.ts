@@ -1,4 +1,6 @@
-﻿// This file will define HTTP routes exposed by the Analytics Service.
-import { Router } from "express";
+﻿import { Router } from "express";
+import { getWordCorrectness, postAnswerCheckedEvent } from "../controllers/index.js";
 
 export const router = Router();
+router.get("/dashboard/word-correctness", getWordCorrectness);
+router.post("/internal/events/answer-checked", postAnswerCheckedEvent);

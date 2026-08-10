@@ -1,3 +1,7 @@
-﻿// This file will start the API Gateway HTTP process.
-// TODO: Add service bootstrap and graceful shutdown.
-export {};
+﻿// This file starts the API Gateway HTTP process.
+import { app } from "./app.js";
+import { apiGatewayConfig } from "./config/index.js";
+
+app.listen(apiGatewayConfig.port, () => {
+  console.log(`api-gateway listening on http://localhost:${apiGatewayConfig.port}`);
+});

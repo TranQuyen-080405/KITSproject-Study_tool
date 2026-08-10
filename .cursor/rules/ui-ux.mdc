@@ -1,7 +1,7 @@
 ---
 description: UI/UX rules for the Korean learning web and mobile clients.
 globs: "{apps/web/**/*.{tsx,ts,css},apps/mobile/**/*.{tsx,ts}}"
-alwaysApply: false
+alwaysApply: True
 ---
 
 # UI/UX — Korean Learning Clients

@@ -6,7 +6,8 @@
   "scripts": {
     "typecheck": "corepack pnpm --recursive run typecheck",
     "test": "corepack pnpm --recursive run test",
-    "log": "node scripts/append-change-log.mjs"
+    "log": "node scripts/append-change-log.mjs",
+    "run:all": "corepack pnpm --parallel --filter @korean-learning/user-service --filter @korean-learning/content-service --filter @korean-learning/learning-service --filter @korean-learning/analytics-service --filter @korean-learning/api-gateway --filter @korean-learning/web dev"
   },
   "devDependencies": {
     "typescript": "^5.8.3",

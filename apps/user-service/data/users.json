@@ -1,0 +1,22 @@
+{
+  "userRecords": [
+    {
+      "userId": "demo-user",
+      "username": "user demo",
+      "displayName": "User Demo",
+      "passwordHash": "fd37bfc9c74de80faa107e878a92def0:fd84f5b86bd5e43aa8bc0f0813d8c71eb86974f5d87e87de732a06cd9f6738ea899fdd4fef58dc35d9aeefb04295dee7f81b9fb6a819da5fc4a1fa83e8860845"
+    },
+    {
+      "userId": "guest-user",
+      "username": "guest",
+      "displayName": "Khách",
+      "passwordHash": ""
+    },
+    {
+      "userId": "d37f0a5f-00d7-4a8b-9554-888cf4d867f9",
+      "username": "newbie",
+      "displayName": "newbie",
+      "passwordHash": "45b92fe58271aa62db4a0d4896475ae0:0a157862b047bc5f033c8d623dacdf8b0e26dd23520040553fa8d577ce7fe44ddf564a4af32979be27a95f029a16915cd6e4997958c3b75103319ad9f54678b5"
+    }
+  ]
+}

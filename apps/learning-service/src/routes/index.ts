@@ -1,4 +1,6 @@
-﻿// This file will define HTTP routes exposed by the Learning Service.
-import { Router } from "express";
+﻿import { Router } from "express";
+import { submitStudyAttempt } from "../controllers/index.js";
 
 export const router = Router();
+
+router.post("/study-attempts", submitStudyAttempt);

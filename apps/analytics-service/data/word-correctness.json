@@ -1,0 +1,39 @@
+{
+  "wordRecords": [
+    {
+      "userId": "demo-user",
+      "wordId": "lesson-1-question-1-answer-a",
+      "wordText": "학교",
+      "correctCount": 3,
+      "wrongCount": 1
+    },
+    {
+      "userId": "demo-user",
+      "wordId": "lesson-1-question-2-answer-b",
+      "wordText": "학생",
+      "correctCount": 2,
+      "wrongCount": 2
+    },
+    {
+      "userId": "demo-user",
+      "wordId": "lesson-1-question-3-answer-c",
+      "wordText": "선생님",
+      "correctCount": 2,
+      "wrongCount": 2
+    }
+  ],
+  "processedEventIds": [
+    "6c6b42ed-93f5-446e-b2e3-d6046069f36a",
+    "a9ca611e-b5ec-48a4-9607-389bf8f68383",
+    "de810556-f1c6-42e4-91f7-0391b9be04ae",
+    "62384d19-1276-4d21-a77b-52453b78be00",
+    "0c84fa8c-cc29-4434-9bc2-9332abe60b2d",
+    "00cea471-3183-4802-9281-4414f6e5abb6",
+    "4702ce7a-2adb-4c7d-99c5-c5e6ae0b7d6d",
+    "1c8cd41b-def0-428b-9637-5abc009926ec",
+    "b7a73d1b-bf0e-4373-84f7-2fece99d8563",
+    "f982201e-2a79-4ecf-a36a-cfe73dab4ec0",
+    "b1a1635e-5a25-4523-af5e-20fa6b9cef4f",
+    "d2c36908-cacd-403c-8a6a-c7e2968a3416"
+  ]
+}
