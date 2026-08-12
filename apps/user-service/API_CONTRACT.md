@@ -494,7 +494,7 @@ Username: postgres
 Password: postgres
 ```
 
-Database hiện chỉ có bảng `users`. Các password, OTP và refresh token đều được lưu dưới dạng hash.
+Database có bảng `users` và `user_verification_tokens`. Các password, OTP và refresh token đều được lưu dưới dạng hash.
 
 ## 8. Biến môi trường quan trọng
 
@@ -527,20 +527,24 @@ Nội dung học thuộc `content-service`; tiến độ học thuộc `learning
 
 ### Bảng `users`
 
-MVP cố ý dùng một bảng duy nhất. ID là số nguyên tự tăng. Mỗi user chỉ có một refresh session và một Google identity tại một thời điểm.
+Thông tin tài khoản nằm trong bảng `users`; OTP tạm thời nằm trong `user_verification_tokens`. ID user là số nguyên tự tăng. Mỗi user chỉ có một refresh session và một Google identity tại một thời điểm.
 
 | Nhóm | Cột chính | Mục đích |
 | --- | --- | --- |
 | Danh tính | `id`, `username`, `email`, `display_name` | Thông tin tài khoản |
 | Mật khẩu | `password_hash` | Argon2 hash; NULL với tài khoản chỉ dùng Google |
 | Google | `google_subject` | Claim Google `sub`, duy nhất |
-| Xác minh | `verification_code_hash`, `verification_code_expires_at` | OTP xác minh hiện tại |
-| Khôi phục | `reset_code_hash`, `reset_code_expires_at` | OTP đặt lại mật khẩu hiện tại |
 | Phiên | `refresh_token_hash`, `refresh_token_expires_at` | Refresh token hiện tại |
 | Trạng thái | `email_verified_at`, `status`, `role` | Trạng thái và quyền tài khoản |
 | Thời gian | `created_at`, `updated_at`, `deleted_at` | Metadata thời gian |
 
 Không trả các cột hash hoặc dữ liệu nội bộ nhạy cảm qua API.
+
+### Bảng `user_verification_tokens`
+
+Mã xác minh email và mã đặt lại mật khẩu được lưu riêng theo từng lần phát hành. `purpose` có hai giá trị
+`VERIFY_EMAIL` và `RESET_PASSWORD`. Mã cũ được đánh dấu đã dùng khi phát hành mã mới; token được xóa theo
+user nhờ foreign key `ON DELETE CASCADE`.
 
 ## 10. Mã lỗi và yêu cầu bảo mật
 
