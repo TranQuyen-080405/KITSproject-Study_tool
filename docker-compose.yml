@@ -11,8 +11,41 @@ services:
   user-service:
     build:
       context: .
-      dockerfile: infrastructure/docker/Dockerfile.service
-    command: ["pnpm", "--filter", "@korean-learning/user-service", "dev"]
+      dockerfile: apps/user-service/Dockerfile
+    environment:
+      USER_DATABASE_URL: postgresql+psycopg://postgres:postgres@user-postgres:5432/user_service
+      JWT_SECRET: ${USER_JWT_SECRET:-local-development-secret-change-in-production}
+      JWT_ISSUER: kits-user-service
+      JWT_AUDIENCE: kits-services
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      ADMIN_EMAILS: ${USER_ADMIN_EMAILS:-admin@example.com}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_FROM: ${SMTP_FROM:-}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_USE_TLS: ${SMTP_USE_TLS:-true}
+      SECURE_COOKIES: "false"
+    ports:
+      - "8001:8000"
+    depends_on:
+      user-postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  user-service-frontend:
+    build:
+      context: .
+      dockerfile: apps/user-service/frontend/Dockerfile
+      args:
+        VITE_API_URL: ${USER_API_URL:-http://localhost:8001/api/v1}
+        VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+    ports:
+      - "8080:80"
+    depends_on:
+      - user-service
+    restart: unless-stopped
 
   content-service:
     build:
@@ -48,9 +81,17 @@ services:
     image: postgres:17
     environment:
       POSTGRES_DB: user_service
+      POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
     volumes:
       - user-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d user_service"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   content-postgres:
     image: postgres:17
