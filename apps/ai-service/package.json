@@ -1,19 +1,14 @@
-﻿{
+{
   "name": "@korean-learning/ai-service",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests"
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js"
   },
   "dependencies": {
+    "dotenv": "^17.4.2",
     "express": "^5.1.0"
-  },
-  "devDependencies": {
-    "@types/express": "^5.0.3",
-    "@types/node": "^22.15.3",
-    "tsx": "^4.19.3"
   }
 }
