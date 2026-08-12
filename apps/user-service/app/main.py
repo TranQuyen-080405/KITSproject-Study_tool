@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 from .config import settings
 from .database import Base, engine, get_db
 from .mailer import send_email
-from .models import User, UserRole, UserStatus
+from .models import User, UserRole, UserStatus, UserVerificationToken, VerificationPurpose
 from .schemas import (
     EmailRequest,
     GoogleRequest,
@@ -65,6 +65,52 @@ def issue_refresh_token(user: User) -> str:
     user.refresh_token_hash = token_hash(token)
     user.refresh_token_expires_at = now() + timedelta(days=settings.refresh_token_days)
     return token
+
+
+def issue_verification_token(
+    db: Session,
+    user: User,
+    purpose: VerificationPurpose,
+    lifetime_minutes: int,
+) -> str:
+    issued_at = now()
+    active_tokens = db.scalars(
+        select(UserVerificationToken).where(
+            UserVerificationToken.user_id == user.id,
+            UserVerificationToken.purpose == purpose,
+            UserVerificationToken.used_at.is_(None),
+        )
+    )
+    for active_token in active_tokens:
+        active_token.used_at = issued_at
+
+    code = random_code()
+    db.add(
+        UserVerificationToken(
+            user_id=user.id,
+            purpose=purpose,
+            token_hash=token_hash(code),
+            expires_at=issued_at + timedelta(minutes=lifetime_minutes),
+        )
+    )
+    return code
+
+
+def current_verification_token(
+    db: Session,
+    user: User,
+    purpose: VerificationPurpose,
+) -> UserVerificationToken | None:
+    return db.scalar(
+        select(UserVerificationToken)
+        .where(
+            UserVerificationToken.user_id == user.id,
+            UserVerificationToken.purpose == purpose,
+            UserVerificationToken.used_at.is_(None),
+        )
+        .order_by(UserVerificationToken.created_at.desc(), UserVerificationToken.id.desc())
+        .limit(1)
+    )
 
 
 def token_response(user: User) -> dict:
@@ -150,18 +196,19 @@ def register(payload: RegisterRequest, background_tasks: BackgroundTasks, db: Se
     if existing:
         raise HTTPException(409, detail={"code": "USERNAME_ALREADY_EXISTS", "message": "Tên tài khoản đã tồn tại"})
 
-    code = random_code()
     user = User(
         username=username,
         email=email,
         password_hash=hash_password(payload.password),
         display_name=payload.displayName.strip(),
         role=UserRole.ADMIN if email in settings.admin_emails else UserRole.USER,
-        verification_code_hash=token_hash(code),
-        verification_code_expires_at=now() + timedelta(minutes=settings.verification_token_minutes),
     )
     db.add(user)
     try:
+        db.flush()
+        code = issue_verification_token(
+            db, user, VerificationPurpose.VERIFY_EMAIL, settings.verification_token_minutes
+        )
         db.commit()
         db.refresh(user)
     except IntegrityError:
@@ -182,16 +229,15 @@ def verify_email(payload: VerificationCodeRequest, db: Session = Depends(get_db)
     user = db.scalar(select(User).where(User.email == payload.email.strip().lower()))
     if not user or user.status == UserStatus.DELETED:
         raise HTTPException(404, detail={"code": "EMAIL_NOT_FOUND", "message": "Email không tồn tại trong hệ thống"})
-    if (
-        not user.verification_code_hash
-        or user.verification_code_hash != token_hash(payload.code)
-        or not user.verification_code_expires_at
-        or user.verification_code_expires_at <= now()
-    ):
+    verification_token = current_verification_token(db, user, VerificationPurpose.VERIFY_EMAIL)
+    if not verification_token or verification_token.expires_at <= now():
+        raise HTTPException(401, detail={"code": "INVALID_CODE", "message": "Mã xác minh không đúng hoặc đã hết hạn"})
+    if verification_token.token_hash != token_hash(payload.code):
+        verification_token.attempt_count += 1
+        db.commit()
         raise HTTPException(401, detail={"code": "INVALID_CODE", "message": "Mã xác minh không đúng hoặc đã hết hạn"})
 
-    user.verification_code_hash = None
-    user.verification_code_expires_at = None
+    verification_token.used_at = now()
     user.email_verified_at = now()
     user.status = UserStatus.ACTIVE
     db.commit()
@@ -247,8 +293,16 @@ def google_login(payload: GoogleRequest, response: Response, db: Session = Depen
             user.email_verified_at = user.email_verified_at or now()
             if user.status == UserStatus.PENDING_VERIFICATION:
                 user.status = UserStatus.ACTIVE
-            user.verification_code_hash = None
-            user.verification_code_expires_at = None
+            active_tokens = db.scalars(
+                select(UserVerificationToken).where(
+                    UserVerificationToken.user_id == user.id,
+                    UserVerificationToken.purpose == VerificationPurpose.VERIFY_EMAIL,
+                    UserVerificationToken.used_at.is_(None),
+                )
+            )
+            linked_at = now()
+            for active_token in active_tokens:
+                active_token.used_at = linked_at
         else:
             base_username = f"google_{claims['sub'][:20]}".lower()
             username = base_username
@@ -326,9 +380,7 @@ def forgot_password(payload: EmailRequest, background_tasks: BackgroundTasks, db
     if not user:
         raise HTTPException(404, detail={"code": "EMAIL_NOT_FOUND", "message": "Email không tồn tại trong hệ thống"})
 
-    code = random_code()
-    user.reset_code_hash = token_hash(code)
-    user.reset_code_expires_at = now() + timedelta(minutes=settings.reset_token_minutes)
+    code = issue_verification_token(db, user, VerificationPurpose.RESET_PASSWORD, settings.reset_token_minutes)
     db.commit()
     background_tasks.add_task(
         send_email,
@@ -344,17 +396,16 @@ def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db))
     user = db.scalar(select(User).where(User.email == payload.email.strip().lower()))
     if not user or user.status == UserStatus.DELETED:
         raise HTTPException(404, detail={"code": "EMAIL_NOT_FOUND", "message": "Email không tồn tại trong hệ thống"})
-    if (
-        not user.reset_code_hash
-        or user.reset_code_hash != token_hash(payload.code)
-        or not user.reset_code_expires_at
-        or user.reset_code_expires_at <= now()
-    ):
+    reset_token = current_verification_token(db, user, VerificationPurpose.RESET_PASSWORD)
+    if not reset_token or reset_token.expires_at <= now():
+        raise HTTPException(401, detail={"code": "INVALID_CODE", "message": "Mã đặt lại mật khẩu không đúng hoặc đã hết hạn"})
+    if reset_token.token_hash != token_hash(payload.code):
+        reset_token.attempt_count += 1
+        db.commit()
         raise HTTPException(401, detail={"code": "INVALID_CODE", "message": "Mã đặt lại mật khẩu không đúng hoặc đã hết hạn"})
 
     user.password_hash = hash_password(payload.newPassword)
-    user.reset_code_hash = None
-    user.reset_code_expires_at = None
+    reset_token.used_at = now()
     user.refresh_token_hash = None
     user.refresh_token_expires_at = None
     db.commit()

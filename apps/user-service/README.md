@@ -70,4 +70,4 @@ SMTP_USE_TLS=true
 
 Không commit App Password vào Git. Gmail chỉ là dịch vụ gửi thư; người dùng có thể đăng ký bằng bất kỳ địa chỉ email hợp lệ nào.
 
-Service chỉ dùng bảng `users` với ID số tự tăng. Bảng được tạo khi service khởi động; khi schema bắt đầu thay đổi trong môi trường dùng chung, nên bổ sung Alembic migration thay cho `create_all`.
+Service dùng bảng `users` với ID số tự tăng và bảng `user_verification_tokens` để lưu mã xác minh email/đặt lại mật khẩu. Các bảng được tạo khi service khởi động; khi schema bắt đầu thay đổi trong môi trường dùng chung, nên bổ sung Alembic migration thay cho `create_all`.
