@@ -6,3 +6,7 @@ dist/
 .env.local
 *.log
 coverage/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
