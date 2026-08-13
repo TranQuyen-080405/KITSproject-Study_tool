@@ -1,11 +1,30 @@
-﻿// This Prisma schema will define the database owned by the AI Service.
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("AI_DATABASE_URL")
+  url      = env("DATABASE_URL")
 }
 
-// TODO: Add only models owned by this service.
+model Conversation {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @map("user_id")
+  title String @default("Cuộc hội thoại mới")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  messages Message[]
+  @@index([userId, updatedAt])
+  @@map("conversations")
+}
+
+model Message {
+  id String @id @default(uuid()) @db.Uuid
+  conversationId String @map("conversation_id") @db.Uuid
+  role String
+  content String
+  createdAt DateTime @default(now()) @map("created_at")
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  @@index([conversationId, createdAt])
+  @@map("messages")
+}
