@@ -46,7 +46,8 @@ export const conversationRepository = {
         return prisma.message.create({
             data: {
                 conversationId: id,
-                message: message
+                role: message.role,
+                content: message.content
             }
         })
     },
