@@ -50,6 +50,35 @@ docker compose config
 
 Inside Docker Compose, the gateway reaches services by Compose service name, for example `http://user-service:8000`.
 
+Docker Compose remains an optional local-development path. Render deployment should use the native Node.js runtime below.
+
+## Render Deployment
+
+This repository is a monorepo, so configure the Render Web Service from the repository root.
+
+Recommended Render configuration:
+
+| Setting | Value |
+| --- | --- |
+| Runtime | `Node` |
+| Build Command | `corepack enable && pnpm install --frozen-lockfile && pnpm --filter @korean-learning/api-gateway build` |
+| Start Command | `corepack pnpm --filter @korean-learning/api-gateway start` |
+| Health Check Path | `/health` |
+
+Required environment variables:
+
+```env
+USER_SERVICE_URL=https://<render-user-service>
+CONTENT_SERVICE_URL=https://<render-content-service>
+LEARNING_SERVICE_URL=https://<render-learning-service>
+ANALYTICS_SERVICE_URL=https://<render-analytics-service>
+AI_SERVICE_URL=https://<render-ai-service>
+```
+
+Render provides `PORT` dynamically. Do not hardcode `PORT` unless the Render service configuration specifically requires it.
+
+Use public or private Render service URLs for upstream services according to the final deployment architecture. The gateway can deploy before every upstream service is available; `/health` remains usable independently, and proxy calls to unavailable upstream services return `503`.
+
 ## V1 Scope
 
 Gateway V1 implements routing, health checks, unknown-route JSON 404 responses, and JSON 503 responses when a selected upstream cannot be reached.
