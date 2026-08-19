@@ -1,4 +1,5 @@
 import { Router, type NextFunction, type Request, type Response } from "express";
+import { ServerResponse } from "node:http";
 import { createProxyMiddleware } from "http-proxy-middleware";
 import type { ServiceUrls } from "../config/index.js";
 
@@ -20,6 +21,16 @@ function matchesPrefix(path: string, prefix: string): boolean {
   return path === prefix || path.startsWith(`${prefix}/`);
 }
 
+export function handleProxyError(displayName: string, res: ServerResponse): void {
+  if (res.headersSent) {
+    res.end();
+    return;
+  }
+
+  res.writeHead(503, { "Content-Type": "application/json" });
+  res.end(JSON.stringify({ error: `${displayName} service unavailable` }));
+}
+
 export function createRouter(services: ServiceUrls): Router {
   const router = Router();
   const proxies = new Map(
@@ -30,11 +41,12 @@ export function createRouter(services: ServiceUrls): Router {
         changeOrigin: true,
         on: {
           error: (_error, _req, res) => {
-            const response = res as Response;
-
-            if (!response.headersSent) {
-              response.status(503).json({ error: `${target.displayName} service unavailable` });
+            if (res instanceof ServerResponse) {
+              handleProxyError(target.displayName, res);
+              return;
             }
+
+            res.end();
           },
         },
       }),

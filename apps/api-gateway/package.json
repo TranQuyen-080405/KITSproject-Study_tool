@@ -1,4 +1,4 @@
-﻿{
+{
   "name": "@korean-learning/api-gateway",
   "version": "0.1.0",
   "private": true,
@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "express": "^5.1.0",
-    "http-proxy-middleware": "^3.0.5"
+    "http-proxy-middleware": "^4.2.0"
   },
   "devDependencies": {
     "@types/express": "^5.0.3",
