@@ -1,19 +1,27 @@
-﻿{
+{
   "name": "@korean-learning/api-gateway",
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=22 <23"
+  },
   "scripts": {
+    "build": "tsc --project tsconfig.build.json",
     "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "http-proxy-middleware": "^4.2.0"
   },
   "devDependencies": {
     "@types/express": "^5.0.3",
     "@types/node": "^22.15.3",
+    "@types/supertest": "^6.0.3",
+    "supertest": "^7.1.4",
     "tsx": "^4.19.3"
   }
 }
