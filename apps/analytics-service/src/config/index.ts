@@ -1,7 +1,7 @@
 ﻿// This file will load configuration for the Analytics Service.
 import path from "node:path";
 
-const port = Number.parseInt(process.env.PORT ?? "3003", 10);
+const port = Number.parseInt(process.env.PORT ?? "303", 10);
 
 export const config = {
   port: Number.isFinite(port) ? port : 3003,
