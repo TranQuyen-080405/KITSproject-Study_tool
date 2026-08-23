@@ -1,0 +1,40 @@
+{
+  "description": "Sample quiz-result events sent from Content Service to Analytics Service.",
+  "events": [
+    {
+      "userId": "content-service-fixture-user",
+      "vocabularyId": "weather-sunny",
+      "word": "맑음",
+      "translation": "sunny / clear weather",
+      "correct": true
+    },
+    {
+      "userId": "content-service-fixture-user",
+      "vocabularyId": "weather-sunny",
+      "word": "맑음",
+      "translation": "sunny / clear weather",
+      "correct": true
+    },
+    {
+      "userId": "content-service-fixture-user",
+      "vocabularyId": "weather-sunny",
+      "word": "맑음",
+      "translation": "sunny / clear weather",
+      "correct": true
+    },
+    {
+      "userId": "content-service-fixture-user",
+      "vocabularyId": "weather-rain",
+      "word": "비",
+      "translation": "rain",
+      "correct": false
+    },
+    {
+      "userId": "content-service-fixture-user",
+      "vocabularyId": "weather-cloudy",
+      "word": "흐림",
+      "translation": "cloudy",
+      "correct": true
+    }
+  ]
+}
