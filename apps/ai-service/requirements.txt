@@ -1,0 +1,9 @@
+fastapi>=0.115,<1
+uvicorn[standard]>=0.30,<1
+sqlalchemy[asyncio]>=2.0,<3
+asyncpg>=0.29,<1
+pydantic-settings>=2.6,<3
+langchain-core>=0.3,<2
+langchain-openai>=0.3,<2
+# Optional when LLM_PROVIDER=anthropic:
+# langchain-anthropic>=0.3,<2
