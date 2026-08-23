@@ -5,6 +5,13 @@ services:
       context: .
       dockerfile: infrastructure/docker/Dockerfile.service
     command: ["pnpm", "--filter", "@korean-learning/api-gateway", "dev"]
+    environment:
+      PORT: "3000"
+      USER_SERVICE_URL: http://user-service:8000
+      CONTENT_SERVICE_URL: http://content-service:3001
+      LEARNING_SERVICE_URL: http://learning-service:3002
+      ANALYTICS_SERVICE_URL: http://analytics-service:3003
+      AI_SERVICE_URL: http://ai-service:3004
     ports:
       - "3000:3000"
 
