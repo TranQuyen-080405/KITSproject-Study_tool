@@ -1,4 +1,4 @@
-﻿// This file will provide data access owned by the Analytics Service.
+﻿// This file will provide data access owned by the Analytics Service
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { config } from "../config/index.js";
