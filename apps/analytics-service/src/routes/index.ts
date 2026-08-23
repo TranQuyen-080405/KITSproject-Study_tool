@@ -1,4 +1,4 @@
-﻿// This file will define HTTP routes exposed by the Analytics Service.
+﻿// This file will define HTTP routes exposed by the Analytics Service
 import { Router } from "express";
 import { getDashboard, getDueReviews, submitReview } from "../controllers/index.js";
 
