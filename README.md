@@ -1,5 +1,18 @@
 # Lệnh chạy
+
+## Web local (Vite)
+
+```bash
 corepack pnpm --filter @korean-learning/web dev
+```
+
+## Web + auth stack (Docker)
+
+```bash
+docker compose up -d --build web
+```
+
+Mở http://localhost:5173 — nginx phục vụ UI và proxy `/api` → API Gateway → User Service.
 
 
 # Korean Learning App

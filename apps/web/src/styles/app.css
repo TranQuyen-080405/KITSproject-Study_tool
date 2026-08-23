@@ -118,6 +118,38 @@ button {
   padding: 0;
 }
 
+.login-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #8a98a6;
+  font-size: 12px;
+}
+
+.login-divider::before,
+.login-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: #d7e0e7;
+}
+
+.login-google-button {
+  display: flex;
+  min-height: 44px;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.login-google-fallback {
+  min-height: 44px;
+  color: #31414d;
+  background: #fff;
+  border: 1px solid #ccd7df;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
 .login-footer-links {
   display: flex;
   justify-content: space-between;

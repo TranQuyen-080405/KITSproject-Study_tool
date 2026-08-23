@@ -75,3 +75,28 @@ Format mỗi mục (do script tạo):
 - Thêm docs/team-roadmap-7-people.md: phân 7 workstream ownership, deliverable, handoff, Definition of Done và roadmap 12 tuần Web MVP → AI/event analytics → mobile/hardening.
 - Team có lộ trình end-to-end để làm song song mà vẫn theo Gateway, database-per-service và Learning event → Analytics read model.
 ----------------------------------------
+
+--- Trần Quyền <2026-08-23 03:31>------
+- Tách lớp API auth trong apps/web: types/auth, api/client+endpoints, services/auth.service; LoginPage chỉ gọi authService; nối đúng contract User Service qua Gateway /api/v1/auth (login, register, verify-email, logout).
+- UI không còn hard-code fetch URL cũ /api/auth; session dùng accessToken theo User Service Python trên main.
+----------------------------------------
+
+--- Trần Quyền <2026-08-23 04:02>------
+- Thêm service Docker web (nginx + Vite build) trong docker-compose
+- Chạy apps/web qua Docker trên cổng 5173, proxy /api tới api-gateway
+----------------------------------------
+
+--- Trần Quyền <2026-08-23 04:07>------
+- Đồng bộ UI login web với user-service frontend
+- Login có Google, quên/đặt lại mật khẩu, đăng ký/xác minh email giống demo User Service
+----------------------------------------
+
+--- Trần Quyền <2026-08-23 04:13>------
+- Khôi phục UI login web cũ, chỉ thêm nút thiếu
+- Giữ nền/card HARU cũ; thêm Google, quên mật khẩu, reset — không đổi skin user-service
+----------------------------------------
+
+--- Trần Quyền <2026-08-23 04:27>------
+- Thêm Mailpit làm SMTP local cho user-service
+- Dev xem OTP tại :8025 khi chưa cấu hình Gmail; mặc định compose trỏ mailpit
+----------------------------------------

@@ -10,10 +10,13 @@ const repoRoot = path.resolve(webRoot, "../..");
 export default defineConfig({
   plugins: [react()],
   server: {
+    host: true,
     fs: {
       allow: [repoRoot],
     },
     proxy: {
+      // Host/dev: Vite forwards to local gateway.
+      // Docker image uses nginx to reach the api-gateway service instead.
       "/api": "http://localhost:3000",
     },
   },

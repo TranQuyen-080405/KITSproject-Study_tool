@@ -1,4 +1,4 @@
-import type { Account } from "../pages/login-page";
+import type { Account } from "../types/auth";
 
 type AccountBadgeProps = { account: Account; onLogout: () => void };
 

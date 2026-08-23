@@ -7,12 +7,25 @@ import { DashboardPage } from "./pages/dashboard-page";
 import { LessonPage } from "./pages/lesson-page";
 import { McqPage } from "./pages/mcq-page";
 import { ResultPage } from "./pages/result-page";
-import { Account, LoginPage } from "./pages/login-page";
+import { LoginPage } from "./pages/login-page";
+import { authService } from "./services/auth.service";
+import type { Account } from "./types/auth";
 
 export function App() {
   const [account, setAccount] = useState<Account | undefined>(() => {
     const stored = localStorage.getItem("haru-account");
-    return stored ? JSON.parse(stored) as Account : undefined;
+    if (!stored) return undefined;
+    try {
+      const parsed = JSON.parse(stored) as Partial<Account>;
+      if (typeof parsed.accessToken !== "string" || typeof parsed.id !== "number") {
+        localStorage.removeItem("haru-account");
+        return undefined;
+      }
+      return parsed as Account;
+    } catch {
+      localStorage.removeItem("haru-account");
+      return undefined;
+    }
   });
   const [activePage, setActivePage] = useState<AppPage>("lessons");
   const [selectedLessonId, setSelectedLessonId] = useState("lesson-1");
@@ -23,7 +36,12 @@ export function App() {
     setAccount(user);
   }
 
-  function clearAccount() {
+  async function clearAccount() {
+    try {
+      await authService.logout();
+    } catch {
+      // Local logout still proceeds if the gateway/user-service is offline.
+    }
     localStorage.removeItem("haru-account");
     setAccount(undefined);
   }
@@ -32,15 +50,15 @@ export function App() {
     return <LoginPage onLogin={saveAccount} />;
   }
 
-  const badge = <AccountBadge account={account} onLogout={clearAccount} />;
+  const badge = <AccountBadge account={account} onLogout={() => void clearAccount()} />;
 
   if (activePage === "chatbot") return <>{badge}<ChatbotPage onNavigate={setActivePage} /></>;
-  if (activePage === "dashboard") return <>{badge}<DashboardPage onNavigate={setActivePage} token={account.token} /></>;
+  if (activePage === "dashboard") return <>{badge}<DashboardPage onNavigate={setActivePage} token={account.accessToken} /></>;
 
   if (activePage === "mcq") {
     return <>{badge}<McqPage
       lessonId={selectedLessonId}
-      token={account.token}
+      token={account.accessToken}
       onComplete={(correctCount, totalCount) => {
         setResult({ correctCount, totalCount });
         setActivePage("result");
