@@ -12,7 +12,55 @@ corepack pnpm --filter @korean-learning/web dev
 docker compose up -d --build web
 ```
 
-Mở http://localhost:5173 — nginx phục vụ UI và proxy `/api` → API Gateway → User Service.
+Mở http://localhost:5173 — nginx phục vụ UI và proxy `/api` → API Gateway →
+User/Content/AI Service.
+
+Tạo dữ liệu local để test Web:
+
+```bash
+docker compose exec user-service python scripts/seed_test_user.py
+docker compose exec content-service pnpm --filter @korean-learning/content-service seed:test
+```
+
+Đăng nhập: username `test`, password `test1234`.
+
+## AI Service (Docker)
+
+```bash
+docker compose up -d --build ai-service ai-service-frontend
+```
+
+| URL | Mục đích |
+| --- | --- |
+| http://localhost:3004/health | AI API health |
+| http://localhost:8081 | Chatbot UI test trong AI service |
+| http://localhost:3000/api/v1/ai/health | Qua API Gateway |
+
+Chatbot UI local (hot reload), backend Docker vẫn ở `:3004`:
+
+```bash
+cd apps/ai-service/frontend
+npm install
+npm run dev
+```
+
+Mở http://localhost:5174 — Vite proxy `/conversations` và `/health` tới AI API.
+
+Cần `LLM_API_KEY` (Groq) trong `.env`. Mặc định dùng `qwen/qwen3.6-27b` (chat thuần). Tránh `openai/gpt-oss-20b` cho chatbot — model này hay lỗi `tool_use_failed` trên Groq.
+
+## Analytics Service (Docker)
+
+```bash
+docker compose up -d --build analytics-service
+```
+
+| URL | Mục đích |
+| --- | --- |
+| http://localhost:3003/health | Analytics API health |
+| http://localhost:3003/api/v1/analytics/dashboard?userId=demo | Dashboard trực tiếp |
+| http://localhost:3000/api/v1/analytics/dashboard?userId=demo | Qua API Gateway |
+
+Postgres analytics: `localhost:5437`. Hiện service lưu review vào volume JSON; DB/RabbitMQ đã gắn sẵn cho bước Prisma/event sau.
 
 
 # Korean Learning App

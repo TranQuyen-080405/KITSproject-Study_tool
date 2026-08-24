@@ -28,7 +28,7 @@ export function App() {
     }
   });
   const [activePage, setActivePage] = useState<AppPage>("lessons");
-  const [selectedLessonId, setSelectedLessonId] = useState("lesson-1");
+  const [selectedLessonId, setSelectedLessonId] = useState<string>();
   const [result, setResult] = useState({ correctCount: 0, totalCount: 0 });
 
   function saveAccount(user: Account) {
@@ -52,13 +52,12 @@ export function App() {
 
   const badge = <AccountBadge account={account} onLogout={() => void clearAccount()} />;
 
-  if (activePage === "chatbot") return <>{badge}<ChatbotPage onNavigate={setActivePage} /></>;
+  if (activePage === "chatbot") return <>{badge}<ChatbotPage onNavigate={setActivePage} userId={account.id} /></>;
   if (activePage === "dashboard") return <>{badge}<DashboardPage onNavigate={setActivePage} token={account.accessToken} /></>;
 
-  if (activePage === "mcq") {
+  if (activePage === "mcq" && selectedLessonId) {
     return <>{badge}<McqPage
       lessonId={selectedLessonId}
-      token={account.accessToken}
       onComplete={(correctCount, totalCount) => {
         setResult({ correctCount, totalCount });
         setActivePage("result");

@@ -1,0 +1,11 @@
+id,suite,conversation_group,turn,user_prompt,expected_behavior,expected_language,check_notes
+1,conversation_basic,practice,1,"안녕하세요! 오늘 기분이 어때요?",Casual conversation reply,ko,Reply mainly in Korean Hangul
+2,conversation_continuation,practice,2,"오늘 뭐 했어요?",Continue conversation,ko,Stay in Korean; acknowledge prior turn
+3,conversation_continuation,practice,3,"저는 오늘 학교에 갔어요.",Acknowledge and continue,ko,Stay in Korean
+4,conversation_continuation,practice,4,"주말에 뭐 하고 싶어요?",Conversation or ask back,ko,Stay in Korean
+5,conversation_continuation,practice,5,"저는 한국 음식을 좋아해요. 특히 김치찌개를 좋아해요.",Continue conversation,ko,Stay in Korean
+6,vocabulary_basic,solo_6,1,"먹다 nghĩa là gì?",Explain vocabulary,vi,Explain in Vietnamese; include Korean word/examples
+7,vocabulary_basic,solo_7,1,"공부하다 dùng như thế nào?",Explain word usage,vi,Explain in Vietnamese with examples
+8,vocabulary_context,solo_8,1,"안녕하세요 nghĩa là gì? Có dùng với bạn bè được không?",Meaning plus politeness/context,vi,Vietnamese explanation of meaning and formality
+9,grammar_correction,solo_9,1,"저는 한국어를 공부해요 đúng không?",Correct or confirm plus explain,vi,Treat as study question; explain in Vietnamese
+10,similar_forms,solo_10,1,"""맛있다"" và ""맛있어요"" khác nhau như thế nào?",Explain usage difference,vi,Vietnamese explanation of formality/conjugation difference

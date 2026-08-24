@@ -1,0 +1,12 @@
+{
+  "prompt": "안녕하세요 có nghĩa là gì?",
+  "targetVocabularyIndex": 0,
+  "options": [
+    "xin chào",
+    "cảm ơn",
+    "tạm biệt",
+    "xin lỗi"
+  ],
+  "correctOptionIndex": 0,
+  "wrongOptionIndex": 1
+}

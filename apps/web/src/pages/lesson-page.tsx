@@ -70,7 +70,13 @@ export function LessonPage({ onNavigate, onSelectLesson }: LessonPageProps) {
               onClick={() => onSelectLesson(lesson.lessonId)}
               type="button"
             >
-              <span className="lesson-row-title">{lesson.lessonTitle}</span>
+              <span className="lesson-row-copy">
+                <span className="lesson-row-title">{lesson.lessonTitle}</span>
+                <span className="lesson-row-description">{lesson.lessonDescription}</span>
+                <span className="lesson-row-meta">
+                  {lesson.vocabularyCount} từ vựng · {lesson.questionCount} câu hỏi
+                </span>
+              </span>
               <span aria-hidden="true" className="lesson-row-arrow">
                 →
               </span>

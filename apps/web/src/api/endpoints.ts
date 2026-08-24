@@ -14,4 +14,19 @@ export const endpoints = {
   users: {
     me: "/api/v1/users/me",
   },
+  content: {
+    lessons: "/api/v1/content/lessons",
+    lesson: (lessonId: string) =>
+      `/api/v1/content/lessons/${encodeURIComponent(lessonId)}`,
+    checkQuestion: (questionId: string) =>
+      `/api/v1/content/questions/${encodeURIComponent(questionId)}/check`,
+  },
+  ai: {
+    health: "/api/v1/ai/health",
+    conversations: "/api/v1/ai/conversations",
+    conversation: (conversationId: string) =>
+      `/api/v1/ai/conversations/${encodeURIComponent(conversationId)}`,
+    messages: (conversationId: string) =>
+      `/api/v1/ai/conversations/${encodeURIComponent(conversationId)}/messages`,
+  },
 } as const;

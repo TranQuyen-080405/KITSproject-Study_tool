@@ -1,19 +1,36 @@
-﻿{
+{
   "name": "@korean-learning/content-service",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
+    "prepare": "prisma generate --config prisma.config.ts",
+    "predev": "prisma generate --config prisma.config.ts",
     "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "prisma:generate": "prisma generate --config prisma.config.ts",
+    "db:deploy": "prisma migrate deploy --config prisma.config.ts",
+    "seed:test": "tsx prisma/seed.ts",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run",
+    "test:unit": "vitest run tests/services.test.ts tests/app.test.ts tests/contract.test.ts",
+    "test:integration": "node tests/scripts/run-integration-tests.mjs",
+    "test:e2e": "node tests/scripts/run-api-tests.mjs",
+    "test:api": "node tests/scripts/run-api-tests.mjs"
   },
   "dependencies": {
-    "express": "^5.1.0"
+    "@prisma/adapter-pg": "^7.9.1",
+    "@prisma/client": "^7.9.1",
+    "express": "^5.1.0",
+    "pg": "^8.23.0"
   },
   "devDependencies": {
     "@types/express": "^5.0.3",
     "@types/node": "^22.15.3",
+    "@types/pg": "^8.23.1",
+    "@types/supertest": "^6.0.3",
+    "prisma": "^7.9.1",
+    "supertest": "^7.2.2",
     "tsx": "^4.19.3"
   }
 }

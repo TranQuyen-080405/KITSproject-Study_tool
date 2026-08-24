@@ -1,11 +1,48 @@
-﻿// This Prisma schema will define the database owned by the Content Service.
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("CONTENT_DATABASE_URL")
 }
 
-// TODO: Add only models owned by this service.
+model Lesson {
+  id          String       @id @default(uuid())
+  name        String
+  description String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  vocabulary  Vocabulary[]
+  questions   Question[]
+}
+
+model Vocabulary {
+  id        String     @id @default(uuid())
+  lessonId  String
+  word      String
+  meaning   String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  lesson    Lesson     @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  questions Question[]
+
+  @@unique([lessonId, word])
+  @@index([lessonId])
+}
+
+model Question {
+  id                 String      @id @default(uuid())
+  lessonId           String
+  vocabularyId       String?
+  prompt             String
+  options            Json
+  correctOptionIndex Int
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+  lesson             Lesson      @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  vocabulary         Vocabulary? @relation(fields: [vocabularyId], references: [id], onDelete: SetNull)
+
+  @@index([lessonId])
+  @@index([vocabularyId])
+}

@@ -40,6 +40,18 @@ curl -X POST http://localhost:8001/api/v1/auth/register \
   -d '{"username":"localadmin","email":"admin@example.com","password":"password123","displayName":"Local Admin"}'
 ```
 
+Tạo tài khoản local đã xác minh, không cần OTP (idempotent):
+
+```bash
+docker compose exec user-service python scripts/seed_test_user.py
+```
+
+```text
+Username: test
+Password: test1234
+Email:    test@local.test
+```
+
 ## Cấu hình tối thiểu
 
 Sao chép `.env.example` thành `.env`, sau đó cấu hình JWT, Gmail SMTP và Google OAuth. `GOOGLE_CLIENT_ID` được dùng đồng thời bởi backend để xác minh ID token và frontend để hiển thị nút Google.

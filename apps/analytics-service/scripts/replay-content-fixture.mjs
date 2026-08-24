@@ -5,7 +5,7 @@ const fixtureUrl = new URL("../fixtures/content-service-results.json", import.me
 const fixture = JSON.parse(await readFile(fixtureUrl, "utf8"));
 
 for (const [index, event] of fixture.events.entries()) {
-  const response = await fetch(`${endpoint}/api/v1/reviews`, {
+  const response = await fetch(`${endpoint}/api/v1/analytics/reviews`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(event),
@@ -15,4 +15,4 @@ for (const [index, event] of fixture.events.entries()) {
   console.log(`${index + 1}. ${body.review.word}: ${body.review.status}; next review ${body.review.nextReviewAt}`);
 }
 
-console.log(`\nDashboard: ${endpoint}/api/v1/dashboard?userId=content-service-fixture-user`);
+console.log(`\nDashboard: ${endpoint}/api/v1/analytics/dashboard?userId=content-service-fixture-user`);

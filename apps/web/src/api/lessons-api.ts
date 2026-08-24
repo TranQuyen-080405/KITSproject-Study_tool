@@ -1,4 +1,6 @@
-// This module calls lesson APIs through the API Gateway only.
+import { apiRequest } from "./client";
+import { endpoints } from "./endpoints";
+
 export type PublicLessonAnswer = {
   answerId: string;
   answerText: string;
@@ -13,41 +15,81 @@ export type PublicLessonQuestion = {
 export type PublicLessonSummary = {
   lessonId: string;
   lessonTitle: string;
+  lessonDescription: string;
+  vocabularyCount: number;
   questionCount: number;
 };
 
 export type PublicLessonDetail = {
   lessonId: string;
   lessonTitle: string;
+  lessonDescription: string;
   lessonQuestions: PublicLessonQuestion[];
 };
 
-async function requestGateway<T>(path: string): Promise<T> {
-  const response = await fetch(path);
+type ContentLessonSummary = {
+  id: string;
+  name: string;
+  description: string;
+  vocabularyCount: number;
+  questionCount: number;
+};
 
-  if (!response.ok) {
-    let message = "Không tải được dữ liệu bài học.";
+type ContentQuestion = {
+  id: string;
+  prompt: string;
+  options: string[];
+};
 
-    try {
-      const body = (await response.json()) as { error?: string };
-      if (body.error) {
-        message = body.error;
-      }
-    } catch {
-      // Keep the default message when the body is not JSON.
-    }
+type ContentLessonDetail = {
+  id: string;
+  name: string;
+  description: string;
+  questions: ContentQuestion[];
+};
 
-    throw new Error(message);
-  }
-
-  return response.json() as Promise<T>;
+function mapQuestion(question: ContentQuestion): PublicLessonQuestion {
+  return {
+    questionId: question.id,
+    questionText: question.prompt,
+    answerOptions: question.options.map((answerText, index) => ({
+      answerId: String(index),
+      answerText,
+    })),
+  };
 }
 
 export async function fetchLessonSummaries(): Promise<PublicLessonSummary[]> {
-  const body = await requestGateway<{ lessons: PublicLessonSummary[] }>("/api/lessons");
-  return body.lessons;
+  const body = await apiRequest<{ lessons: ContentLessonSummary[] }>(
+    endpoints.content.lessons,
+  );
+  return body.lessons.map((lesson) => ({
+    lessonId: lesson.id,
+    lessonTitle: lesson.name,
+    lessonDescription: lesson.description,
+    vocabularyCount: lesson.vocabularyCount,
+    questionCount: lesson.questionCount,
+  }));
 }
 
 export async function fetchLessonDetail(lessonId: string): Promise<PublicLessonDetail> {
-  return requestGateway<PublicLessonDetail>(`/api/lessons/${encodeURIComponent(lessonId)}`);
+  const { lesson } = await apiRequest<{ lesson: ContentLessonDetail }>(
+    endpoints.content.lesson(lessonId),
+  );
+  return {
+    lessonId: lesson.id,
+    lessonTitle: lesson.name,
+    lessonDescription: lesson.description,
+    lessonQuestions: lesson.questions.map(mapQuestion),
+  };
+}
+
+export async function checkLessonAnswer(
+  questionId: string,
+  selectedOptionIndex: number,
+): Promise<{ correct: boolean; masteryCandidateVocabularyId: string | null }> {
+  return apiRequest(endpoints.content.checkQuestion(questionId), {
+    method: "POST",
+    body: { selectedOptionIndex },
+  });
 }

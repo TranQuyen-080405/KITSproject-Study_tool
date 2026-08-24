@@ -1,17 +1,20 @@
 // This page loads MCQ content for a selected lesson through the API Gateway.
 import { useEffect, useState } from "react";
-import { fetchLessonDetail, type PublicLessonDetail } from "../api/lessons-api";
+import {
+  checkLessonAnswer,
+  fetchLessonDetail,
+  type PublicLessonDetail,
+} from "../api/lessons-api";
 import { type AppPage } from "../components/app-sidebar";
 import "../styles/app.css";
 
 type McqPageProps = {
   lessonId: string;
-  token: string;
   onNavigate: (page: AppPage) => void;
   onComplete: (correctCount: number, totalCount: number) => void;
 };
 
-export function McqPage({ lessonId, token, onNavigate, onComplete }: McqPageProps) {
+export function McqPage({ lessonId, onNavigate, onComplete }: McqPageProps) {
   const [lesson, setLesson] = useState<PublicLessonDetail>();
   const [questionIndex, setQuestionIndex] = useState(0);
   const [selectedAnswerId, setSelectedAnswerId] = useState<string>();
@@ -72,19 +75,20 @@ export function McqPage({ lessonId, token, onNavigate, onComplete }: McqPageProp
     }
     setIsSubmitting(true);
     try {
-      const response = await fetch("/api/study/attempts", {
-        method: "POST",
-        headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
-        body: JSON.stringify({
-          lessonId,
-          answers: Object.entries(nextAnswers).map(([questionId, selectedAnswerId]) => ({ questionId, selectedAnswerId })),
-        }),
-      });
-      if (!response.ok) throw new Error("Không thể lưu kết quả.");
-      const result = await response.json() as { correctCount: number; totalCount: number };
-      onComplete(result.correctCount, result.totalCount);
+      const results = await Promise.all(
+        lesson.lessonQuestions.map((question) =>
+          checkLessonAnswer(
+            question.questionId,
+            Number(nextAnswers[question.questionId]),
+          ),
+        ),
+      );
+      onComplete(
+        results.filter(({ correct }) => correct).length,
+        lesson.lessonQuestions.length,
+      );
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Không thể lưu kết quả.");
+      setErrorMessage(error instanceof Error ? error.message : "Không thể chấm kết quả.");
     } finally {
       setIsSubmitting(false);
     }
@@ -145,7 +149,7 @@ export function McqPage({ lessonId, token, onNavigate, onComplete }: McqPageProp
             onClick={handleNextQuestion}
             type="button"
           >
-            {isSubmitting ? "Đang lưu..." : isLastQuestion ? "Xem kết quả" : "Câu tiếp theo"}
+            {isSubmitting ? "Đang chấm..." : isLastQuestion ? "Xem kết quả" : "Câu tiếp theo"}
           </button>
         </>
       ) : null}

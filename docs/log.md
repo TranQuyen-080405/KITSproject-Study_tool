@@ -100,3 +100,58 @@ Format mỗi mục (do script tạo):
 - Thêm Mailpit làm SMTP local cho user-service
 - Dev xem OTP tại :8025 khi chưa cấu hình Gmail; mặc định compose trỏ mailpit
 ----------------------------------------
+
+--- Trần Quyền <2026-08-24 03:02>------
+- Gắn AI Service FastAPI vào docker-compose gốc
+- Bật ai-service :3004 + frontend :8081 + ai-postgres; Gateway proxy /api/v1/ai
+----------------------------------------
+
+--- Trần Quyền <2026-08-24 03:13>------
+- Cấu hình AI Service dùng Groq llama-3.1-8b-instant
+- LLM qua OpenAI-compatible base URL Groq; key chỉ nằm trong .env local
+----------------------------------------
+
+--- Trần Quyền <2026-08-24 03:35>------
+- Thêm benchmark CSV chuẩn và script gọi AI API
+- Chạy tests/scripts/run_benchmark.py để đo ngôn ngữ/hội thoại theo bộ case
+----------------------------------------
+
+--- Trần Quyền <2026-08-24 03:47>------
+- Đơn giản hóa chatbot UI test cho AI service
+- UI gửi chat trực tiếp API, tự tạo conversation; Docker :8081 hoặc Vite :5174
+----------------------------------------
+
+--- Trần Quyền <2026-08-24 03:50>------
+- Làm lại UI chatbot AI service cho dễ nhìn
+- Panel chat KITS: welcome gợi ý, bubble/composer gọn, trạng thái API rõ
+----------------------------------------
+
+--- Trần Quyền <2026-08-24 04:03>------
+- Thêm module format Markdown cho tin nhắn AI
+- marked + DOMPurify render HTML an toàn; CSS typography cho list/heading/code
+----------------------------------------
+
+--- Trần Quyền <2026-08-24 04:11>------
+- Đổi model Groq sang qwen và xử lý tool_use_failed
+- Tránh gpt-oss tự gọi tool; strip thẻ think trong reply AI
+----------------------------------------
+
+--- Trần Quyền <2026-08-24 04:27>------
+- Setup Docker cho Analytics service
+- Chạy analytics API local với Compose, healthcheck, volume JSON và Postgres/RabbitMQ sẵn sàng
+----------------------------------------
+
+--- Trần Quyền <2026-08-24 04:57>------
+- Thêm Content Lesson & Question API với PostgreSQL
+- Tạo bài học, nhập từ vựng, tạo/chấm câu hỏi MCQ theo vocabulary và theo dõi contract test qua Docker/Gateway
+----------------------------------------
+
+--- Trần Quyền <2026-08-24 05:19>------
+- Mở rộng test pyramid và data-driven tracking cho Content service
+- Bổ sung unit/contract/PostgreSQL integration/E2E cases TC-01 đến TC-07, I/O timing reports và câu hỏi tổng quát với SET NULL
+----------------------------------------
+
+--- Trần Quyền <2026-08-24 05:45>------
+- Nối Web với Content và AI Service
+- Web tải/chấm bài học qua Gateway, chat HARU HARU với AI, đồng thời thêm seed idempotent cho user test và bài học mẫu
+----------------------------------------

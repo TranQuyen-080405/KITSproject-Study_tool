@@ -10,6 +10,7 @@ COPY apps/user-service/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY apps/user-service/app ./app
+COPY apps/user-service/scripts ./scripts
 
 EXPOSE 8000
 

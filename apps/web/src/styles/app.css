@@ -640,6 +640,24 @@ button {
   font-weight: 700;
 }
 
+.lesson-row-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.lesson-row-description,
+.lesson-row-meta {
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.lesson-row-meta {
+  color: #126e82;
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .lesson-row-arrow {
   color: #126e82;
   font-size: 24px;
@@ -929,7 +947,43 @@ button {
 .chatbot-identity {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 16px;
+}
+
+.chatbot-title {
+  flex: 1 1 180px;
+}
+
+.chatbot-title h1 {
+  margin: 0;
+  font-size: clamp(28px, 4vw, 38px);
+  letter-spacing: -0.04em;
+}
+
+.chatbot-title p {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.new-chat-button {
+  min-height: 40px;
+  padding: 0 14px;
+  margin-left: auto;
+  color: #0e5262;
+  font-weight: 700;
+  background: #e7f5f7;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.new-chat-button:hover,
+.new-chat-button:focus-visible {
+  background: #cdecef;
+  outline: 2px solid #126e82;
+  outline-offset: 2px;
 }
 
 .chatbot-avatar {
@@ -1040,9 +1094,52 @@ button {
   border-radius: 12px;
 }
 
+.message > p,
+.ai-markdown > :first-child {
+  margin-top: 0;
+}
+
+.message > p,
+.ai-markdown > :last-child {
+  margin-bottom: 0;
+}
+
+.ai-markdown {
+  overflow-wrap: anywhere;
+}
+
+.ai-markdown pre {
+  padding: 12px;
+  overflow-x: auto;
+  background: rgb(23 32 51 / 8%);
+  border-radius: 8px;
+}
+
+.ai-markdown code {
+  font-family: "IBM Plex Mono", "Noto Sans Mono", monospace;
+}
+
+.ai-markdown a {
+  color: #0e5262;
+}
+
 .message-assistant {
   align-self: flex-start;
   background: #edf2f7;
+}
+
+.chat-status,
+.chat-error {
+  margin: 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.chat-error {
+  padding: 10px 16px;
+  color: #b42318;
+  background: #fff1f0;
+  border-top: 1px solid #f4c7c3;
 }
 
 .message-user {

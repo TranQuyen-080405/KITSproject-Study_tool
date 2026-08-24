@@ -1,162 +1,304 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-
+import { useEffect, useMemo, useRef, useState } from "react";
+import { AiMessageContent } from "./AiMessageContent.jsx";
 import { api, health } from "./api.js";
 
-const PAGE_SIZE = 20;
+/** Default chips above the composer (always visible). */
+const QUICK_PROMPTS = [
+  "안녕하세요! 오늘 기분이 어때요?",
+  "“먹다” nghĩa là gì?",
+  "저는 한국어를 공부해요 đúng không?",
+];
 
-function formatDate(value) {
-  return new Date(value).toLocaleString("vi-VN", { dateStyle: "short", timeStyle: "short" });
+/** Larger bank for typeahead match while typing. */
+const PROMPT_BANK = [
+  ...QUICK_PROMPTS,
+  "오늘 뭐 했어요?",
+  "저는 오늘 학교에 갔어요.",
+  "주말에 뭐 하고 싶어요?",
+  "저는 한국 음식을 좋아해요. 특히 김치찌개를 좋아해요.",
+  "공부하다 dùng như thế nào?",
+  "안녕하세요 nghĩa là gì? Có dùng với bạn bè được không?",
+  "“맛있다” và “맛있어요” khác nhau như thế nào?",
+  "이 문장 고쳐 주세요: 나는 어제 영화 봐요.",
+  "Từ 가다 chia hiện tại lịch sự thế nào?",
+  "Giải thích trợ từ 은/는 và 이/가.",
+  "Hãy sửa câu này và giải thích bằng tiếng Việt.",
+  "Luyện hội thoại gọi món ăn ở nhà hàng.",
+  "Dịch sang tiếng Hàn: Hôm nay tôi đi học.",
+  "Phát âm ㄹ cuối âm khác nhau thế nào?",
+  "Cho ví dụ câu với 고 싶어요.",
+];
+
+function formatTime(value) {
+  return new Date(value).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+}
+
+function normalize(text) {
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[“”"']/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function matchPrompts(query, bank, limit = 5) {
+  const q = normalize(query);
+  if (q.length < 1) return [];
+
+  const scored = bank
+    .map((prompt) => {
+      const n = normalize(prompt);
+      if (!n || n === q) return null;
+
+      let score = 0;
+      if (n.includes(q)) score += 40;
+      if (n.startsWith(q)) score += 25;
+      if (q.includes(n.slice(0, Math.min(8, n.length)))) score += 10;
+
+      const qTokens = q.split(" ").filter(Boolean);
+      const hits = qTokens.filter((token) => token.length > 1 && n.includes(token)).length;
+      score += hits * 8;
+
+      // Prefer similar length ("form prompt cỡ bản").
+      const lengthGap = Math.abs(prompt.length - query.trim().length);
+      score += Math.max(0, 18 - lengthGap);
+
+      if (score <= 0) return null;
+      return { prompt, score, lengthGap };
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.score - a.score || a.lengthGap - b.lengthGap);
+
+  const seen = new Set();
+  const out = [];
+  for (const item of scored) {
+    if (seen.has(item.prompt)) continue;
+    seen.add(item.prompt);
+    out.push(item.prompt);
+    if (out.length >= limit) break;
+  }
+  return out;
 }
 
 export default function App() {
-  const [userId, setUserId] = useState("user-001");
-  const [conversations, setConversations] = useState([]);
-  const [active, setActive] = useState(null);
+  const [userId, setUserId] = useState("tester");
+  const [conversationId, setConversationId] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [title, setTitle] = useState("");
   const [input, setInput] = useState("");
-  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState("Sẵn sàng");
+  const [backendOk, setBackendOk] = useState(null);
+  const [modelInfo, setModelInfo] = useState("");
   const [error, setError] = useState("");
-  const [modelInfo, setModelInfo] = useState("REST API");
+  const bottomRef = useRef(null);
+  const inputRef = useRef(null);
 
-  const request = useCallback((path, options) => api(path, userId, options), [userId]);
+  const matchedPrompts = useMemo(() => matchPrompts(input, PROMPT_BANK), [input]);
+  const showQuick = input.trim().length === 0;
+  const hintPrompts = showQuick ? QUICK_PROMPTS : matchedPrompts;
 
-  const loadConversations = useCallback(async () => {
-    try {
-      setError("");
-      const data = await request("/conversations");
-      setConversations(data);
-      return data;
-    } catch (requestError) {
-      setError(requestError.message);
-      return [];
-    }
-  }, [request]);
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loading]);
 
-  const loadMessages = useCallback(async (conversationId, targetPage = page) => {
-    if (!conversationId) return;
-    try {
-      setError("");
-      const data = await request(`/conversations/${conversationId}/messages?page=${targetPage}&limit=${PAGE_SIZE}`);
-      setMessages(data);
-    } catch (requestError) {
-      setError(requestError.message);
-    }
-  }, [page, request]);
+  useEffect(() => {
+    health(userId)
+      .then((result) => setBackendOk(result.status === "ok"))
+      .catch(() => setBackendOk(false));
+  }, [userId]);
 
-  useEffect(() => { loadConversations(); }, [loadConversations]);
-
-  async function selectConversation(conversation) {
-    try {
-      setError("");
-      const detail = await request(`/conversations/${conversation.id}`);
-      setActive(detail);
-      setPage(1);
-      await loadMessages(conversation.id, 1);
-    } catch (requestError) {
-      setError(requestError.message);
-    }
+  async function ensureConversation() {
+    if (conversationId) return conversationId;
+    const created = await api("/conversations", userId, {
+      method: "POST",
+      body: JSON.stringify({ title: `Chat ${new Date().toLocaleString("vi-VN")}` }),
+    });
+    setConversationId(created.id);
+    return created.id;
   }
 
-  async function createConversation(event) {
-    event.preventDefault();
-    try {
-      setLoading(true);
-      const created = await request("/conversations", { method: "POST", body: JSON.stringify({ title: title.trim() || null }) });
-      setTitle("");
-      await loadConversations();
-      await selectConversation(created);
-      setStatus("Đã tạo conversation mới");
-    } catch (requestError) {
-      setError(requestError.message);
-    } finally {
-      setLoading(false);
-    }
+  async function refreshMessages(id) {
+    const detail = await api(`/conversations/${id}`, userId);
+    setMessages(detail.messages || []);
   }
 
-  async function sendMessage(event) {
-    event.preventDefault();
-    if (!active || !input.trim()) return;
+  function startNewChat() {
+    setConversationId(null);
+    setMessages([]);
+    setError("");
+    setModelInfo("");
+    setInput("");
+    inputRef.current?.focus();
+  }
+
+  async function sendText(text) {
+    const content = text.trim();
+    if (!content || loading) return;
+
+    setLoading(true);
+    setError("");
+    setInput("");
+
+    const optimistic = {
+      id: `local-${Date.now()}`,
+      role: "user",
+      content,
+      created_at: new Date().toISOString(),
+    };
+    setMessages((current) => [...current, optimistic]);
+
     try {
-      setLoading(true);
-      setError("");
-      setStatus("AI đang trả lời...");
-      const result = await request(`/conversations/${active.id}/messages`, { method: "POST", body: JSON.stringify({ content: input.trim() }) });
-      setInput("");
+      const id = await ensureConversation();
+      const result = await api(`/conversations/${id}/messages`, userId, {
+        method: "POST",
+        body: JSON.stringify({ content }),
+      });
       setModelInfo(`${result.provider} · ${result.model}`);
-      await loadMessages(active.id, 1);
-      await loadConversations();
-      setStatus("Đã nhận phản hồi");
+      await refreshMessages(id);
     } catch (requestError) {
+      setMessages((current) => current.filter((item) => item.id !== optimistic.id));
       setError(requestError.message);
-      setStatus("Gửi message thất bại");
+      setInput(content);
     } finally {
       setLoading(false);
+      inputRef.current?.focus();
     }
   }
 
-  async function deleteConversation() {
-    if (!active || !window.confirm(`Xóa “${active.title}”?`)) return;
-    try {
-      setLoading(true);
-      await request(`/conversations/${active.id}`, { method: "DELETE" });
-      setActive(null);
-      setMessages([]);
-      await loadConversations();
-      setStatus("Đã xóa conversation");
-    } catch (requestError) {
-      setError(requestError.message);
-    } finally {
-      setLoading(false);
-    }
+  function applyHint(prompt) {
+    setInput(prompt);
+    inputRef.current?.focus();
   }
 
-  async function checkHealth() {
-    try {
-      const result = await health();
-      setStatus(result.status === "ok" ? "Backend đang hoạt động" : "Backend trả trạng thái không hợp lệ");
-      setError("");
-    } catch (requestError) {
-      setError(requestError.message);
-    }
+  function sendMessage(event) {
+    event.preventDefault();
+    void sendText(input);
   }
 
-  const canNextPage = messages.length === PAGE_SIZE;
-  const conversationName = active?.title || "Chọn một conversation";
-  const allMessages = useMemo(() => messages, [messages]);
+  return (
+    <div className="shell">
+      <div className="glow glow-a" aria-hidden="true" />
+      <div className="glow glow-b" aria-hidden="true" />
 
-  return <div className="layout">
-    <aside className="sidebar">
-      <div className="brand"><span>✦</span><div><strong>Study AI</strong><small>Chatbot workspace</small></div></div>
-      <label className="field-label" htmlFor="user-id">USER ID</label>
-      <input id="user-id" value={userId} onChange={(event) => setUserId(event.target.value)} onBlur={() => { setActive(null); setMessages([]); loadConversations(); }} />
-      <form className="create-form" onSubmit={createConversation}>
-        <input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Tên conversation mới" maxLength="120" />
-        <button disabled={loading}>＋ Tạo mới</button>
-      </form>
-      <div className="sidebar-heading">CONVERSATIONS <span>{conversations.length}</span></div>
-      <nav className="conversation-list">
-        {conversations.map((conversation) => <button key={conversation.id} className={active?.id === conversation.id ? "conversation active" : "conversation"} onClick={() => selectConversation(conversation)}>
-          <span>☷</span><em>{conversation.title}</em>
-        </button>)}
-        {!conversations.length && <p className="muted">Chưa có conversation.</p>}
-      </nav>
-      <button className="health" onClick={checkHealth}>● Kiểm tra backend</button>
-    </aside>
+      <div className="frame">
+        <header className="topbar">
+          <div className="brand">
+            <div className="mark" aria-hidden="true">한</div>
+            <div>
+              <p className="eyebrow">KITS AI</p>
+              <h1>Trợ lý học tiếng Hàn</h1>
+            </div>
+          </div>
 
-    <main className="chat">
-      <header><div><small>AI CHAT</small><h1>{conversationName}</h1></div><div className="header-actions"><button className="delete" onClick={deleteConversation} disabled={!active || loading}>⌫ Xóa</button><span className="badge">{modelInfo}</span></div></header>
-      {error && <div className="error">{error}</div>}
-      <section className="messages">
-        {!active && <div className="empty"><b>✦</b><h2>Bắt đầu cuộc trò chuyện</h2><p>Tạo hoặc chọn conversation ở thanh bên.</p></div>}
-        {active && !allMessages.length && <div className="empty"><b>✦</b><h2>Chưa có tin nhắn</h2><p>Gửi tin nhắn đầu tiên cho AI.</p></div>}
-        {allMessages.map((message) => <article className={`message ${message.role}`} key={message.id}><div className="avatar">{message.role === "user" ? "U" : "AI"}</div><div><p>{message.content}</p><time>{message.role === "user" ? "Bạn" : "Assistant"} · {formatDate(message.created_at)}</time></div></article>)}
-      </section>
-      {active && <div className="pagination"><button disabled={page === 1 || loading} onClick={() => { const next = page - 1; setPage(next); loadMessages(active.id, next); }}>← Trước</button><span>Trang {page}</span><button disabled={!canNextPage || loading} onClick={() => { const next = page + 1; setPage(next); loadMessages(active.id, next); }}>Sau →</button></div>}
-      <form className="composer" onSubmit={sendMessage}><textarea value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); event.currentTarget.form.requestSubmit(); } }} placeholder={active ? "Nhập tin nhắn..." : "Chọn conversation để bắt đầu..."} disabled={!active || loading} /><button disabled={!active || loading || !input.trim()}>{loading ? "Đang gửi..." : "Gửi ↗"}</button></form>
-      <footer>{status}</footer>
-    </main>
-  </div>;
+          <div className="topbar-right">
+            <span className={`pill ${backendOk === false ? "pill-bad" : backendOk ? "pill-ok" : ""}`}>
+              {backendOk === null ? "Đang kiểm tra…" : backendOk ? "API sẵn sàng" : "API lỗi"}
+            </span>
+            {modelInfo ? <span className="pill muted">{modelInfo}</span> : null}
+            <label className="user-field">
+              <span>User</span>
+              <input
+                value={userId}
+                onChange={(event) => setUserId(event.target.value)}
+                aria-label="User ID"
+              />
+            </label>
+            <button className="btn-quiet" onClick={startNewChat} type="button">
+              Chat mới
+            </button>
+          </div>
+        </header>
+
+        {error ? (
+          <div className="alert" role="alert">
+            <strong>Không gửi được</strong>
+            <span>{error}</span>
+          </div>
+        ) : null}
+
+        <main className="thread" aria-live="polite">
+          {messages.map((message) => (
+            <article className={`row ${message.role}`} key={message.id}>
+              <div className="avatar" aria-hidden="true">
+                {message.role === "user" ? "Bạn" : "AI"}
+              </div>
+              <div className="bubble">
+                {message.role === "assistant" ? (
+                  <AiMessageContent text={message.content} />
+                ) : (
+                  <p className="plain">{message.content}</p>
+                )}
+                <time dateTime={message.created_at}>{formatTime(message.created_at)}</time>
+              </div>
+            </article>
+          ))}
+
+          {loading ? (
+            <div className="row assistant">
+              <div className="avatar" aria-hidden="true">AI</div>
+              <div className="bubble typing" aria-label="AI đang soạn">
+                <span />
+                <span />
+                <span />
+              </div>
+            </div>
+          ) : null}
+          <div ref={bottomRef} />
+        </main>
+
+        <div className="dock">
+          <div className="prompt-hints" aria-label={showQuick ? "Gợi ý nhanh" : "Gợi ý khớp chữ"}>
+            <span className="prompt-hints-label">{showQuick ? "Gợi ý" : "Khớp chữ"}</span>
+            <div className="prompt-hints-list">
+              {hintPrompts.length ? (
+                hintPrompts.map((item) => (
+                  <button key={item} className="chip" onClick={() => applyHint(item)} type="button">
+                    {item}
+                  </button>
+                ))
+              ) : (
+                <span className="prompt-hints-empty">Không có form gần giống</span>
+              )}
+            </div>
+          </div>
+
+          <form className="composer" onSubmit={sendMessage}>
+            <textarea
+              ref={inputRef}
+              value={input}
+              onChange={(event) => setInput(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && !event.shiftKey) {
+                  event.preventDefault();
+                  event.currentTarget.form?.requestSubmit();
+                }
+              }}
+              placeholder="Nhập tiếng Hàn hoặc hỏi bằng tiếng Việt…"
+              disabled={loading}
+              rows={1}
+            />
+            <button
+              className="btn-send"
+              disabled={loading || !input.trim()}
+              type="submit"
+              aria-label={loading ? "Đang gửi" : "Gửi"}
+              title={loading ? "Đang gửi" : "Gửi"}
+            >
+              {loading ? (
+                <span className="btn-send-spinner" aria-hidden="true" />
+              ) : (
+                <svg aria-hidden="true" viewBox="0 0 24 24" className="send-icon">
+                  <path
+                    d="M3.4 20.6 21 12 3.4 3.4l-.1 6.7L14 12l-10.7 1.9.1 6.7Z"
+                    fill="currentColor"
+                  />
+                </svg>
+              )}
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
 }

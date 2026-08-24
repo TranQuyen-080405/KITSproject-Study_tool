@@ -1,0 +1,42 @@
+{
+  "contractVersion": 2,
+  "cases": {
+    "TC-01": {
+      "status": 201,
+      "requiredFields": ["lesson.id", "lesson.name", "lesson.description"]
+    },
+    "TC-02": {
+      "status": 201,
+      "count": 2
+    },
+    "TC-03": {
+      "status": 201
+    },
+    "TC-04": {
+      "status": 201,
+      "vocabularyId": null
+    },
+    "TC-05": {
+      "status": 400,
+      "error": "vocabularyId must belong to this lesson"
+    },
+    "TC-06": {
+      "status": 404,
+      "error": "Target vocabulary not found"
+    },
+    "TC-07": {
+      "databaseAssertions": [
+        "lesson delete cascades vocabulary and questions",
+        "vocabulary delete sets question vocabularyId to null",
+        "failed transaction rolls back every write"
+      ]
+    }
+  },
+  "publicQuestion": {
+    "id": "question-1",
+    "lessonId": "lesson-1",
+    "vocabularyId": "vocabulary-1",
+    "prompt": "안녕하세요 có nghĩa là gì?",
+    "options": ["xin chào", "cảm ơn", "tạm biệt", "xin lỗi"]
+  }
+}

@@ -21,10 +21,12 @@ async def lifespan(_app: FastAPI):
 app = FastAPI(title=settings.app_name, lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.frontend_origin],
+    allow_origins=settings.frontend_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+# Root paths for the AI demo frontend; /api/v1/ai for API Gateway.
 app.include_router(router)
+app.include_router(router, prefix="/api/v1/ai")
 register_exception_handlers(app)

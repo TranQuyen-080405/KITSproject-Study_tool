@@ -11,11 +11,14 @@ services:
       CONTENT_SERVICE_URL: http://content-service:3001
       LEARNING_SERVICE_URL: http://learning-service:3002
       ANALYTICS_SERVICE_URL: http://analytics-service:3003
-      AI_SERVICE_URL: http://ai-service:3004
+      AI_SERVICE_URL: http://ai-service:3000
     ports:
       - "3000:3000"
     depends_on:
       - user-service
+      - content-service
+      - ai-service
+      - analytics-service
     restart: unless-stopped
 
   web:
@@ -82,8 +85,27 @@ services:
   content-service:
     build:
       context: .
-      dockerfile: infrastructure/docker/Dockerfile.service
-    command: ["pnpm", "--filter", "@korean-learning/content-service", "dev"]
+      dockerfile: apps/content-service/Dockerfile
+    environment:
+      PORT: "3001"
+      CONTENT_DATABASE_URL: postgresql://postgres:postgres@content-postgres:5432/content_service
+    ports:
+      - "3001:3001"
+    depends_on:
+      content-postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3001/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
 
   learning-service:
     build:
@@ -94,20 +116,86 @@ services:
   ai-service:
     build:
       context: .
-      dockerfile: infrastructure/docker/Dockerfile.service
-    command: ["pnpm", "--filter", "@korean-learning/ai-service", "dev"]
+      dockerfile: apps/ai-service/Dockerfile
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@ai-postgres:5432/ai_service
+      LLM_PROVIDER: ${LLM_PROVIDER:-openai}
+      LLM_MODEL: ${LLM_MODEL:-qwen/qwen3.6-27b}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_BASE_URL: ${LLM_BASE_URL:-https://api.groq.com/openai/v1}
+      LLM_TEMPERATURE: ${LLM_TEMPERATURE:-0.2}
+      MAX_CONTEXT_MESSAGES: ${MAX_CONTEXT_MESSAGES:-12}
+      MAX_CONTEXT_TOKENS: ${MAX_CONTEXT_TOKENS:-6000}
+      FRONTEND_ORIGIN: ${AI_FRONTEND_ORIGIN:-http://localhost:5173,http://localhost:5174,http://localhost:8081,http://127.0.0.1:5173,http://127.0.0.1:5174,http://127.0.0.1:8081}
+    ports:
+      - "3004:3000"
+    depends_on:
+      ai-postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:3000/health')",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  ai-service-frontend:
+    build:
+      context: ./apps/ai-service/frontend
+      dockerfile: Dockerfile
+      args:
+        # Empty = same origin; nginx proxies /conversations and /health to ai-service.
+        VITE_API_URL: ${AI_API_URL:-}
+    ports:
+      - "8081:80"
+    depends_on:
+      ai-service:
+        condition: service_healthy
+    restart: unless-stopped
 
   analytics-service:
     build:
       context: .
-      dockerfile: infrastructure/docker/Dockerfile.service
-    command: ["pnpm", "--filter", "@korean-learning/analytics-service", "dev"]
+      dockerfile: apps/analytics-service/Dockerfile
+    environment:
+      PORT: "3003"
+      ANALYTICS_DATA_FILE: /data/analytics.json
+      ANALYTICS_DATABASE_URL: postgresql://postgres:postgres@analytics-postgres:5432/analytics_service
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+    ports:
+      - "3003:3003"
+    volumes:
+      - analytics-data:/data
+    depends_on:
+      analytics-postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3003/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
 
   rabbitmq:
     image: rabbitmq:4-management
     ports:
       - "5672:5672"
       - "15672:15672"
+    restart: unless-stopped
 
   user-postgres:
     image: postgres:17
@@ -129,9 +217,18 @@ services:
     image: postgres:17
     environment:
       POSTGRES_DB: content_service
+      POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
+    ports:
+      - "5434:5432"
     volumes:
       - content-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d content_service"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
 
   learning-postgres:
     image: postgres:17
@@ -145,17 +242,35 @@ services:
     image: postgres:17
     environment:
       POSTGRES_DB: ai_service
+      POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
+    ports:
+      - "5436:5432"
     volumes:
       - ai-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ai_service"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
 
   analytics-postgres:
     image: postgres:17
     environment:
       POSTGRES_DB: analytics_service
+      POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
+    ports:
+      - "5437:5432"
     volumes:
       - analytics-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d analytics_service"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
 
 volumes:
   user-postgres-data:
@@ -163,3 +278,4 @@ volumes:
   learning-postgres-data:
   ai-postgres-data:
   analytics-postgres-data:
+  analytics-data:
