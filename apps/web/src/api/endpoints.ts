@@ -21,6 +21,11 @@ export const endpoints = {
     checkQuestion: (questionId: string) =>
       `/api/v1/content/questions/${encodeURIComponent(questionId)}/check`,
   },
+  analytics: {
+    reviews: "/api/v1/analytics/reviews",
+    dashboard: (userId: string | number) =>
+      `/api/v1/analytics/dashboard?userId=${encodeURIComponent(String(userId))}`,
+  },
   ai: {
     health: "/api/v1/ai/health",
     conversations: "/api/v1/ai/conversations",

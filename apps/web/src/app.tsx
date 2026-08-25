@@ -53,11 +53,13 @@ export function App() {
   const badge = <AccountBadge account={account} onLogout={() => void clearAccount()} />;
 
   if (activePage === "chatbot") return <>{badge}<ChatbotPage onNavigate={setActivePage} userId={account.id} /></>;
-  if (activePage === "dashboard") return <>{badge}<DashboardPage onNavigate={setActivePage} token={account.accessToken} /></>;
+  if (activePage === "dashboard") return <>{badge}<DashboardPage onNavigate={setActivePage} token={account.accessToken} userId={account.id} /></>;
 
   if (activePage === "mcq" && selectedLessonId) {
     return <>{badge}<McqPage
       lessonId={selectedLessonId}
+      userId={account.id}
+      accessToken={account.accessToken}
       onComplete={(correctCount, totalCount) => {
         setResult({ correctCount, totalCount });
         setActivePage("result");

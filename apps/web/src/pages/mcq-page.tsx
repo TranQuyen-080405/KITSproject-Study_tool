@@ -1,5 +1,6 @@
 // This page loads MCQ content for a selected lesson through the API Gateway.
 import { useEffect, useState } from "react";
+import { recordQuizReviews } from "../api/analytics-api";
 import {
   checkLessonAnswer,
   fetchLessonDetail,
@@ -10,11 +11,19 @@ import "../styles/app.css";
 
 type McqPageProps = {
   lessonId: string;
+  userId: string | number;
+  accessToken: string;
   onNavigate: (page: AppPage) => void;
   onComplete: (correctCount: number, totalCount: number) => void;
 };
 
-export function McqPage({ lessonId, onNavigate, onComplete }: McqPageProps) {
+export function McqPage({
+  lessonId,
+  userId,
+  accessToken,
+  onNavigate,
+  onComplete,
+}: McqPageProps) {
   const [lesson, setLesson] = useState<PublicLessonDetail>();
   const [questionIndex, setQuestionIndex] = useState(0);
   const [selectedAnswerId, setSelectedAnswerId] = useState<string>();
@@ -83,6 +92,11 @@ export function McqPage({ lessonId, onNavigate, onComplete }: McqPageProps) {
           ),
         ),
       );
+
+      void recordQuizReviews(userId, results, accessToken).catch((error: unknown) => {
+        console.warn("Không thể lưu thống kê Analytics.", error);
+      });
+
       onComplete(
         results.filter(({ correct }) => correct).length,
         lesson.lessonQuestions.length,
