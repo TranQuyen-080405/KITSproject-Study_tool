@@ -18,7 +18,6 @@ describe("loadConfig", () => {
       services: {
         user: "http://localhost:8001",
         content: "http://localhost:3001",
-        learning: "http://localhost:3002",
         analytics: "http://localhost:3003",
         ai: "http://localhost:3004",
       },
@@ -30,7 +29,6 @@ describe("loadConfig", () => {
       PORT: "4000",
       USER_SERVICE_URL: "http://user.example",
       CONTENT_SERVICE_URL: "http://content.example",
-      LEARNING_SERVICE_URL: "http://learning.example",
       ANALYTICS_SERVICE_URL: "http://analytics.example",
       AI_SERVICE_URL: "http://ai.example",
     };
@@ -42,7 +40,6 @@ describe("loadConfig", () => {
       services: {
         user: "http://user.example",
         content: "http://content.example",
-        learning: "http://learning.example",
         analytics: "http://analytics.example",
         ai: "http://ai.example",
       },

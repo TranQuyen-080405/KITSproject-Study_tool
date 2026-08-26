@@ -20,7 +20,7 @@ Các lệnh phổ biến trong Dockerfile chạy tuần tự: `FROM` → `WORKDI
 ## 4. Các câu lệnh (Commands) & Cú pháp thường dùng
 
 ```bash
-docker build -f infrastructure/docker/Dockerfile.service -t korean-learning-service .
+docker build -f infrastructure/docker/Dockerfile.service -t korean-api-gateway .
 ```
 
 Từ khóa: `FROM`, `WORKDIR`, `COPY`, `RUN`, `CMD`, `EXPOSE`.

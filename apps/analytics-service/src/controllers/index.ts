@@ -28,8 +28,24 @@ export async function getDueReviews(request: Request, response: Response): Promi
   if (!nonEmptyString(userId)) { response.status(400).json({ error: "userId is required" }); return; }
   const requestedLimit = Number.parseInt(String(request.query.limit ?? "20"), 10);
   const limit = Number.isFinite(requestedLimit) ? Math.min(Math.max(requestedLimit, 1), 100) : 20;
+  const scope = request.query.scope === "queue" ? "queue" : "due";
   const now = new Date();
-  const reviews = (await reviewRepository.listByUser(userId.trim())).filter((review) => new Date(review.nextReviewAt) <= now).sort((a, b) => a.nextReviewAt.localeCompare(b.nextReviewAt)).slice(0, limit);
+  let reviews = await reviewRepository.listByUser(userId.trim());
+  if (scope === "due") {
+    reviews = reviews.filter((review) => new Date(review.nextReviewAt) <= now);
+  }
+  reviews = reviews.sort((a, b) => a.nextReviewAt.localeCompare(b.nextReviewAt)).slice(0, limit);
+  response.json({ reviews, count: reviews.length });
+}
+
+export async function getReviewQueue(request: Request, response: Response): Promise<void> {
+  const userId = request.query.userId;
+  if (!nonEmptyString(userId)) { response.status(400).json({ error: "userId is required" }); return; }
+  const requestedLimit = Number.parseInt(String(request.query.limit ?? "50"), 10);
+  const limit = Number.isFinite(requestedLimit) ? Math.min(Math.max(requestedLimit, 1), 100) : 50;
+  const reviews = (await reviewRepository.listByUser(userId.trim()))
+    .sort((a, b) => a.nextReviewAt.localeCompare(b.nextReviewAt))
+    .slice(0, limit);
   response.json({ reviews, count: reviews.length });
 }
 
@@ -40,5 +56,13 @@ export async function getDashboard(request: Request, response: Response): Promis
   const reviews = await reviewRepository.listByUser(userId.trim());
   const totalAnswers = reviews.reduce((sum, review) => sum + review.totalReviews, 0);
   const correctAnswers = reviews.reduce((sum, review) => sum + review.correctCount, 0);
-  response.json({ totalWords: reviews.length, dueNow: reviews.filter((review) => toDueIn(review, now) === 0).length, learning: reviews.filter((review) => review.status === "learning").length, mastered: reviews.filter((review) => review.status === "mastered").length, accuracy: totalAnswers === 0 ? 0 : Math.round((correctAnswers / totalAnswers) * 100), nextReviewAt: reviews.length ? [...reviews].sort((a, b) => a.nextReviewAt.localeCompare(b.nextReviewAt))[0].nextReviewAt : null });
+  response.json({
+    totalWords: reviews.length,
+    dueNow: reviews.filter((review) => toDueIn(review, now) === 0).length,
+    learning: reviews.filter((review) => review.status === "learning").length,
+    mastered: reviews.filter((review) => review.status === "mastered").length,
+    accuracy: totalAnswers === 0 ? 0 : Math.round((correctAnswers / totalAnswers) * 100),
+    nextReviewAt: reviews.length ? [...reviews].sort((a, b) => a.nextReviewAt.localeCompare(b.nextReviewAt))[0].nextReviewAt : null,
+    reviews: [...reviews].sort((a, b) => a.nextReviewAt.localeCompare(b.nextReviewAt)).slice(0, 50),
+  });
 }

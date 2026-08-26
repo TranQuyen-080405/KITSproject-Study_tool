@@ -6,7 +6,8 @@ Tài liệu này mô tả đúng API đang được cài đặt trong `apps/user
 
 - Base URL local: `http://localhost:8001/api/v1`
 - Swagger UI: `http://localhost:8001/docs`
-- React demo: `http://localhost:8080`
+- React demo (profile `demo`): `http://localhost:8080`
+- Web client chính: `http://localhost:5173`
 - Health check: `http://localhost:8001/health`
 - Request/response: JSON
 - Access token: JWT trong header `Authorization: Bearer <accessToken>`
@@ -315,7 +316,13 @@ Access token tồn tại 15 phút. Role được ghi vào token khi đăng nhậ
 
 ### 3.1. Frontend React demo
 
-Frontend tại `http://localhost:8080` tập trung vào các luồng xác thực:
+Frontend demo tại `http://localhost:8080` (chỉ chạy với Compose profile `demo`) tập trung vào các luồng xác thực:
+
+```bash
+docker compose --profile demo up -d --build user-service-frontend
+```
+
+Login chính dùng Web tại `http://localhost:5173`.
 
 - Khung đăng nhập username/password ở giữa trang.
 - Nút **Tiếp tục với Google** bằng Google Identity Services.
@@ -419,6 +426,8 @@ Sau khi liên kết, user có thể đăng nhập bằng Google hoặc username/
 5. Thêm chính xác các frontend origin local vào Authorized JavaScript origins:
 
 ```text
+http://localhost:5173
+http://127.0.0.1:5173
 http://localhost:8080
 http://127.0.0.1:8080
 ```
@@ -432,10 +441,12 @@ GOOGLE_CLIENT_ID=123456789-example.apps.googleusercontent.com
 ```
 
 7. Docker Compose truyền cùng Client ID vào backend và frontend build qua `VITE_GOOGLE_CLIENT_ID`.
-8. Rebuild frontend và recreate toàn bộ chuỗi dependency để nhận cấu hình mới:
+8. Rebuild Web (hoặc demo frontend) để nhận cấu hình mới:
 
 ```bash
-docker compose up -d --build --force-recreate user-service-frontend
+docker compose up -d --build --force-recreate web
+# hoặc UI demo:
+docker compose --profile demo up -d --build --force-recreate user-service-frontend
 ```
 
 ## 6. Setup gửi email thật qua Gmail
@@ -464,22 +475,31 @@ SMTP_USE_TLS=true
 
 Yêu cầu: Docker Engine/Docker Desktop và Docker Compose.
 
-Từ thư mục gốc dự án:
+Từ thư mục gốc dự án — API mặc định:
 
 ```bash
-docker compose up -d --build user-service-frontend
+docker compose up -d --build user-service
 ```
 
 Lệnh trên tự chạy:
 
-- `user-service-frontend`: React build được Nginx phục vụ tại cổng `8080`.
 - `user-service`: FastAPI tại cổng `8001`.
 - `user-postgres`: PostgreSQL tại cổng `5433`.
+- `mailpit`: SMTP/OTP local tại cổng `8025`.
+
+UI auth demo (không chạy mặc định):
+
+```bash
+docker compose --profile demo up -d --build user-service-frontend
+```
+
+- `user-service-frontend`: React build được Nginx phục vụ tại cổng `8080`.
 
 Kiểm tra:
 
 ```bash
-docker compose ps user-service user-service-frontend user-postgres
+docker compose ps user-service user-postgres mailpit
+docker compose --profile demo ps user-service-frontend
 docker compose logs -f user-service
 ```
 
@@ -523,7 +543,7 @@ File `.env` chứa secret và đã được `.gitignore`; không đưa file này
 - Quên/đặt lại mật khẩu.
 - Đọc và xóa người dùng theo quyền admin.
 
-Nội dung học thuộc `content-service`; tiến độ học thuộc `learning-service`; AI và analytics thuộc các service tương ứng.
+Nội dung học thuộc `content-service`; tiến độ/ôn tập thuộc `analytics-service`; AI thuộc `ai-service`.
 
 ### Bảng `users`
 

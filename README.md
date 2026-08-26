@@ -1,11 +1,43 @@
 # Lệnh chạy
 
-## Web local (Vite)
+## Local (không Docker) — Node apps
+
+Cần Postgres local/Docker cho Content (và User/AI nếu dùng). Chỉ UI:
 
 ```bash
 corepack pnpm --filter @korean-learning/web dev
 ```
 
+Chạy song song Web + Gateway + Content + Analytics (`run:all`):
+
+```bash
+corepack pnpm run:all
+```
+
+Chạy từng phần:
+
+```bash
+corepack pnpm run:web
+corepack pnpm run:gateway
+corepack pnpm run:content
+corepack pnpm run:analytics
+corepack pnpm run:user
+corepack pnpm run:ai
+corepack pnpm run:mobile
+```
+
+| Script | App | Port |
+| --- | --- | --- |
+| `run:all` | web + gateway + content + analytics | nhiều cổng |
+| `run:web` | Web (Vite) | http://localhost:5173 |
+| `run:gateway` | API Gateway | http://localhost:3000 |
+| `run:content` | Content Service | http://localhost:3001 |
+| `run:analytics` | Analytics Service | http://localhost:3003 |
+| `run:user` | User Service (Python/`uvicorn`) | http://localhost:8001 |
+| `run:ai` | AI Service (Python/`uvicorn`) | http://localhost:3004 |
+| `run:mobile` | Mobile (Expo) | Expo CLI |
+
+`run:user` / `run:ai` cần venv + dependency Python đã cài; Postgres tương ứng đang chạy.
 ## Web + auth stack (Docker)
 
 ```bash
@@ -15,7 +47,8 @@ docker compose up -d --build web
 Mở http://localhost:5173 — nginx phục vụ UI và proxy `/api` → API Gateway →
 User/Content/AI Service.
 
-Tạo dữ liệu local để test Web:
+Tạo dữ liệu local để test Web (user `test` / `test1234` cũng được seed tự động khi
+`user-service` start với `SEED_TEST_USER=true` — mặc định trong docker-compose):
 
 ```bash
 docker compose exec user-service python scripts/seed_test_user.py
@@ -27,14 +60,22 @@ docker compose exec content-service pnpm --filter @korean-learning/content-servi
 ## AI Service (Docker)
 
 ```bash
-docker compose up -d --build ai-service ai-service-frontend
+docker compose up -d --build ai-service
 ```
 
 | URL | Mục đích |
 | --- | --- |
 | http://localhost:3004/health | AI API health |
-| http://localhost:8081 | Chatbot UI test trong AI service |
 | http://localhost:3000/api/v1/ai/health | Qua API Gateway |
+| http://localhost:5173 | Chatbot trong Web (client chính) |
+
+UI demo AI riêng (không chạy mặc định):
+
+```bash
+docker compose --profile demo up -d --build ai-service-frontend
+```
+
+| http://localhost:8081 | Chatbot UI test trong AI service |
 
 Chatbot UI local (hot reload), backend Docker vẫn ở `:3004`:
 
@@ -101,9 +142,8 @@ Analytics
 - **API Gateway** — cổng vào công khai và định tuyến request (sau này).
 - **User Service** — xác thực, hồ sơ người dùng và tùy chọn học tập.
 - **Content Service** — bộ flashcard, thẻ flashcard và từ vựng.
-- **Learning Service** — bản ghi học, tiến độ, ôn tập và logic SRS (sau này).
 - **AI Service** — sinh nội dung / giải thích nhờ LLM bên ngoài (sau này).
-- **Analytics Service** — thống kê học tập theo sự kiện và dữ liệu dashboard.
+- **Analytics Service** — review/SRS nhẹ, thống kê học tập và dữ liệu dashboard.
 
 ## Công nghệ sử dụng
 

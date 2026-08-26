@@ -68,14 +68,18 @@ export function parseQuestionInput(body: unknown): CreateQuestionRecord {
   ) {
     throw new AppError("correctOptionIndex must be an integer from 0 to 3", 400);
   }
-  if (body.vocabularyId !== null && typeof body.vocabularyId !== "string") {
+  if (
+    body.vocabularyId !== undefined &&
+    body.vocabularyId !== null &&
+    typeof body.vocabularyId !== "string"
+  ) {
     throw new AppError("vocabularyId must be a string or null", 400);
   }
 
   return {
     prompt: requiredText(body.prompt, "prompt", 500),
     vocabularyId:
-      body.vocabularyId === null
+      body.vocabularyId == null || body.vocabularyId === ""
         ? null
         : requiredText(body.vocabularyId, "vocabularyId", 100),
     options,
@@ -83,10 +87,43 @@ export function parseQuestionInput(body: unknown): CreateQuestionRecord {
   };
 }
 
+type VocabularyLink = { id: string; word: string; meaning: string };
+
+/** ponytail: heuristic word/meaning match; upgrade path = require explicit vocabularyId in UI */
+export function inferVocabularyId(
+  prompt: string,
+  options: string[],
+  correctOptionIndex: number,
+  vocabulary: VocabularyLink[],
+): string | null {
+  if (vocabulary.length === 0) return null;
+
+  const correctText = options[correctOptionIndex]?.trim().toLowerCase() ?? "";
+  const byMeaning = vocabulary.find((item) => item.meaning.trim().toLowerCase() === correctText);
+  if (byMeaning) return byMeaning.id;
+
+  const byWord = vocabulary.find((item) => item.word.trim().toLowerCase() === correctText);
+  if (byWord) return byWord.id;
+
+  const inPrompt = vocabulary.find((item) => prompt.includes(item.word));
+  if (inPrompt) return inPrompt.id;
+
+  for (const option of options) {
+    const text = option.trim().toLowerCase();
+    const match = vocabulary.find(
+      (item) =>
+        item.meaning.trim().toLowerCase() === text || item.word.trim().toLowerCase() === text,
+    );
+    if (match) return match.id;
+  }
+
+  return vocabulary.length === 1 ? vocabulary[0].id : null;
+}
+
 export function gradeQuestion(
   question: { vocabularyId: string | null; correctOptionIndex: number },
   selectedOptionIndex: unknown,
-): { correct: boolean; masteryCandidateVocabularyId: string | null } {
+): { correct: boolean; vocabularyId: string | null; masteryCandidateVocabularyId: string | null } {
   if (
     !Number.isInteger(selectedOptionIndex) ||
     Number(selectedOptionIndex) < 0 ||
@@ -97,6 +134,7 @@ export function gradeQuestion(
   const correct = Number(selectedOptionIndex) === question.correctOptionIndex;
   return {
     correct,
+    vocabularyId: question.vocabularyId,
     masteryCandidateVocabularyId: correct ? question.vocabularyId : null,
   };
 }
@@ -144,19 +182,89 @@ export class ContentService {
     return this.repository.listVocabulary(lessonId);
   }
 
-  createQuestion(lessonId: string, body: unknown) {
-    return this.repository.createQuestion(lessonId, parseQuestionInput(body));
+  async createQuestion(lessonId: string, body: unknown) {
+    const input = parseQuestionInput(body);
+    if (!input.vocabularyId) {
+      const vocabs = await this.repository.listVocabulary(lessonId);
+      input.vocabularyId = inferVocabularyId(
+        input.prompt,
+        input.options,
+        input.correctOptionIndex,
+        vocabs,
+      );
+    }
+    return this.repository.createQuestion(lessonId, input);
   }
 
   async listQuestions(lessonId: string) {
     return (await this.repository.listQuestions(lessonId)).map(serializePublicQuestion);
   }
 
+  listManagedQuestions(lessonId: string) {
+    return this.repository.listManagedQuestions(lessonId);
+  }
+
+  async getManagedQuestion(questionId: string) {
+    const question = await this.repository.getManagedQuestion(questionId);
+    if (!question) throw new AppError("Question not found", 404);
+    return question;
+  }
+
+  async updateLesson(lessonId: string, body: unknown) {
+    const lesson = await this.repository.updateLesson(lessonId, parseLessonInput(body));
+    if (!lesson) throw new AppError("Lesson not found", 404);
+    return lesson;
+  }
+
+  async deleteLesson(lessonId: string) {
+    const deleted = await this.repository.deleteLesson(lessonId);
+    if (!deleted) throw new AppError("Lesson not found", 404);
+  }
+
+  async updateQuestion(questionId: string, body: unknown) {
+    const input = parseQuestionInput(body);
+    const existing = await this.repository.getManagedQuestion(questionId);
+    if (!existing) throw new AppError("Question not found", 404);
+    if (!input.vocabularyId) {
+      const vocabs = await this.repository.listVocabulary(existing.lessonId);
+      input.vocabularyId = inferVocabularyId(
+        input.prompt,
+        input.options,
+        input.correctOptionIndex,
+        vocabs,
+      );
+    }
+    const question = await this.repository.updateQuestion(questionId, input);
+    if (!question) throw new AppError("Question not found", 404);
+    return question;
+  }
+
+  async deleteQuestion(questionId: string) {
+    const deleted = await this.repository.deleteQuestion(questionId);
+    if (!deleted) throw new AppError("Question not found", 404);
+  }
+
   async checkQuestion(questionId: string, body: unknown) {
     if (!isRecord(body)) throw new AppError("JSON body is required", 400);
     const question = await this.repository.getQuestionForCheck(questionId);
     if (!question) throw new AppError("Question not found", 404);
-    return gradeQuestion(question, body.selectedOptionIndex);
+
+    let vocabularyId = question.vocabularyId;
+    if (!vocabularyId) {
+      const vocabs = await this.repository.listVocabulary(question.lessonId);
+      const options = Array.isArray(question.options) ? question.options.map(String) : [];
+      vocabularyId = inferVocabularyId(
+        question.prompt,
+        options,
+        question.correctOptionIndex,
+        vocabs,
+      );
+    }
+
+    return gradeQuestion(
+      { vocabularyId, correctOptionIndex: question.correctOptionIndex },
+      body.selectedOptionIndex,
+    );
   }
 }
 

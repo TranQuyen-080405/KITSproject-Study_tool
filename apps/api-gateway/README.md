@@ -18,7 +18,6 @@ The API Gateway is the public HTTP entry point for web and mobile clients. In V1
 | `/api/v1/auth/*` | User Service | `http://user-service:8000` |
 | `/api/v1/users/*` | User Service | `http://user-service:8000` |
 | `/api/v1/content/*` | Content Service | `http://content-service:3001` |
-| `/api/v1/learning/*` | Learning Service | `http://learning-service:3002` |
 | `/api/v1/analytics/*` | Analytics Service | `http://analytics-service:3003` |
 | `/api/v1/ai/*` | AI Service | `http://ai-service:3004` |
 
@@ -36,7 +35,6 @@ Host-development defaults:
 PORT=3000
 USER_SERVICE_URL=http://localhost:8001
 CONTENT_SERVICE_URL=http://localhost:3001
-LEARNING_SERVICE_URL=http://localhost:3002
 ANALYTICS_SERVICE_URL=http://localhost:3003
 AI_SERVICE_URL=http://localhost:3004
 ```
@@ -70,7 +68,6 @@ Required environment variables:
 ```env
 USER_SERVICE_URL=https://<render-user-service>
 CONTENT_SERVICE_URL=https://<render-content-service>
-LEARNING_SERVICE_URL=https://<render-learning-service>
 ANALYTICS_SERVICE_URL=https://<render-analytics-service>
 AI_SERVICE_URL=https://<render-ai-service>
 ```

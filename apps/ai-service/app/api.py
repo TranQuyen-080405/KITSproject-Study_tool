@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Header, Query, Response
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Response
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -13,8 +13,14 @@ from .services import ChatService
 router = APIRouter()
 
 
-def current_user_id(x_user_id: str | None = Header(default=None)) -> str:
-    return x_user_id or "anonymous"
+def current_user_id(x_user_id: str | None = Header(default=None, alias="x-user-id")) -> str:
+    user_id = (x_user_id or "").strip()
+    if not user_id:
+        raise HTTPException(
+            status_code=401,
+            detail={"code": "MISSING_USER_ID", "message": "Header x-user-id is required"},
+        )
+    return user_id
 
 
 @router.get("/health")

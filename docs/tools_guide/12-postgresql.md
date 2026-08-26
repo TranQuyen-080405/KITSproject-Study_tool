@@ -6,11 +6,10 @@ PostgreSQL (Postgres) là **cơ sở dữ liệu quan hệ**: lưu dữ liệu d
 
 ## 2. Vai trò trong dự án
 
-Không dùng một database dùng chung cho mọi service. `docker-compose.yml` chuẩn bị **5 container Postgres** riêng:
+Không dùng một database dùng chung cho mọi service. `docker-compose.yml` chuẩn bị **4 container Postgres** riêng:
 
 - `user-postgres` → `user_service`
 - `content-postgres` → `content_service`
-- `learning-postgres` → `learning_service`
 - `ai-postgres` → `ai_service`
 - `analytics-postgres` → `analytics_service`
 
@@ -18,7 +17,7 @@ URL mẫu nằm trong `.env.example`.
 
 ## 3. Cách thức hoạt động
 
-Service User chỉ nối tới `USER_DATABASE_URL`. Analytics không được đọc DB của Learning; sau này nhận event qua RabbitMQ rồi tự lưu bản thống kê của mình.
+Service User chỉ nối tới `USER_DATABASE_URL`. Analytics không được đọc DB của Content; nhận dữ liệu qua API/event rồi tự lưu bản thống kê của mình.
 
 ## 4. Các câu lệnh (Commands) & Cú pháp thường dùng
 
@@ -38,7 +37,7 @@ SQL cơ bản (sẽ gặp sau này): `SELECT`, `INSERT`, `UPDATE`, `DELETE`.
 
 ```env
 USER_DATABASE_URL=postgresql://postgres:postgres@localhost:5433/user_service
-LEARNING_DATABASE_URL=postgresql://postgres:postgres@localhost:5435/learning_service
+CONTENT_DATABASE_URL=postgresql://postgres:postgres@localhost:5434/content_service
 ```
 
 Trong Compose (rút gọn):

@@ -155,3 +155,83 @@ Format mỗi mục (do script tạo):
 - Nối Web với Content và AI Service
 - Web tải/chấm bài học qua Gateway, chat HARU HARU với AI, đồng thời thêm seed idempotent cho user test và bài học mẫu
 ----------------------------------------
+
+--- Trần Quyền <2026-08-24 19:33>------
+- Gọn Compose User/AI bằng profile demo
+- UI demo auth/chatbot không chạy mặc định; giữ API + Postgres (+ Mailpit)
+----------------------------------------
+
+--- Trần Quyền <2026-08-25 21:35>------
+- Seed auto user test khi user-service Docker start
+- Tài khoản test/test1234 được tạo tự động (SEED_TEST_USER); sửa PYTHONPATH để script seed chạy được
+----------------------------------------
+
+--- Trần Quyền <2026-08-26 02:09>------
+- Thêm apiContract.csv cho AI, Analytics, Content, Gateway, Web
+- Mỗi API một dòng CSV: method, endpoint, request, types, required, response, status, auth, error
+----------------------------------------
+
+--- Trần Quyền <2026-08-26 02:18>------
+- Bổ sung path/query/body/data_models vào apiContract.csv
+- FE+BE dùng chung: tách Path Params, Query Params, Request Body, Data Models
+----------------------------------------
+
+--- Trần Quyền <2026-08-26 02:26>------
+- Bắt buộc header x-user-id cho AI conversation APIs
+- Thiếu/blank x-user-id trả 401; bỏ default anonymous; cập nhật apiContract
+----------------------------------------
+
+--- Trần Quyền <2026-08-26 02:38>------
+- Web quản lý Content CRUD + API PATCH/DELETE
+- Trang Quản lý tạo/sửa/xóa bài học và câu hỏi; Content service thêm endpoints tương ứng
+----------------------------------------
+
+--- Trần Quyền <2026-08-26 02:44>------
+- Xóa toàn bộ learning-service
+- Gỡ app, Compose, Gateway proxy, env và docs liên quan; SRS/review thuộc Analytics
+----------------------------------------
+
+--- Trần Quyền <2026-08-26 05:33>------
+- Tích hợp gợi ý từ + render HTML markdown vào chat web
+- Chat AI hiển thị markdown/HTML và gợi ý câu hỏi typeahead như AI demo
+----------------------------------------
+
+--- Trần Quyền <2026-08-26 05:53>------
+- Kết nối MCQ với Analytics: vocabularyId, recordReview đúng+sai, ResultPage
+- Sau khi làm bài trắc nghiệm, tiến độ từ vựng được ghi vào Analytics và phản ánh trên Dashboard
+----------------------------------------
+
+--- Trần Quyền <2026-08-26 05:59>------
+- Sửa analytics-service không khởi động (BOM package.json)
+- Dashboard và ghi review MCQ hoạt động khi analytics-service chạy trên :3003
+----------------------------------------
+
+--- Trần Quyền <2026-08-26 06:04>------
+- Dashboard hàng đợi ôn tập + trang flashcard Ôn ngay
+- Hàng đợi hiện thời gian chờ còn lại; bấm Ôn ngay để học từ vựng và ghi review vào Analytics
+----------------------------------------
+
+--- Trần Quyền <2026-08-26 06:08>------
+- Bài tự tạo ghi Analytics + hàng đợi ôn tập scope=queue
+- Tự liên kết từ vựng khi soạn/chấm MCQ; Dashboard tải hàng đợi kèm đếm ngược và Ôn ngay
+----------------------------------------
+
+--- Trần Quyền <2026-08-26 06:12>------
+- Sửa run.cmd: giải phong port analytics + dashboard trả reviews[]
+- Tránh process cũ chiếm :3003; Dashboard nạp hàng đợi ôn tập từ API dashboard
+----------------------------------------
+
+--- Trần Quyền <2026-08-26 06:14>------
+- Sửa run.cmd analytics không mở dialog chọn .json
+- Start analytics từ apps/analytics-service thay vì set path .analytics-data.json trong cmd
+----------------------------------------
+
+--- Trần Quyền <2026-08-26 06:31>------
+- Ổn định run.cmd và kết nối toàn bộ service local
+- Dọn process/PID cũ, chạy service không watch, health-check đủ Web/Gateway/Content/Analytics/User/AI và xác minh Gateway→Content→PostgreSQL trước khi báo Done
+----------------------------------------
+
+--- Trần Quyền <2026-08-26 16:20>------
+- Seed mock data 1 tháng cho user test
+- Tạo 5 bài học mẫu mới, 30 từ/câu hỏi và lịch ôn tập Analytics cho userId=1 để mô phỏng dùng app lâu dài
+----------------------------------------

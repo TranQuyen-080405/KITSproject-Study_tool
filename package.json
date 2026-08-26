@@ -4,6 +4,14 @@
   "private": true,
   "packageManager": "pnpm@10.14.0",
   "scripts": {
+    "run:all": "corepack pnpm --parallel --filter @korean-learning/content-service --filter @korean-learning/analytics-service --filter @korean-learning/api-gateway --filter @korean-learning/web dev",
+    "run:web": "corepack pnpm --filter @korean-learning/web dev",
+    "run:gateway": "corepack pnpm --filter @korean-learning/api-gateway dev",
+    "run:content": "corepack pnpm --filter @korean-learning/content-service dev",
+    "run:analytics": "corepack pnpm --filter @korean-learning/analytics-service dev",
+    "run:mobile": "corepack pnpm --filter @korean-learning/mobile start",
+    "run:user": "cd apps/user-service && uvicorn app.main:app --reload --host 0.0.0.0 --port 8001",
+    "run:ai": "cd apps/ai-service && uvicorn app.main:app --reload --host 0.0.0.0 --port 3004",
     "typecheck": "corepack pnpm --recursive run typecheck",
     "test": "corepack pnpm --recursive run test",
     "log": "node scripts/append-change-log.mjs"

@@ -19,7 +19,7 @@ type MockUpstream = {
   close: () => Promise<void>;
 };
 
-const serviceNames = ["user", "content", "learning", "analytics", "ai"] as const;
+const serviceNames = ["user", "content", "analytics", "ai"] as const;
 
 async function startMockUpstream(status = 200): Promise<MockUpstream> {
   const calls: UpstreamCall[] = [];
@@ -59,7 +59,6 @@ function buildConfig(overrides: Partial<ServiceUrls>): GatewayConfig {
     services: {
       user: "http://127.0.0.1:1",
       content: "http://127.0.0.1:1",
-      learning: "http://127.0.0.1:1",
       analytics: "http://127.0.0.1:1",
       ai: "http://127.0.0.1:1",
       ...overrides,
@@ -98,7 +97,6 @@ describe("createApp", () => {
     ["/api/v1/auth/login", "user"],
     ["/api/v1/users/me", "user"],
     ["/api/v1/content/lessons", "content"],
-    ["/api/v1/learning/progress", "learning"],
     ["/api/v1/analytics/dashboard", "analytics"],
     ["/api/v1/ai/chat", "ai"],
   ] as const)("%s routes to %s upstream", async (path, serviceName) => {

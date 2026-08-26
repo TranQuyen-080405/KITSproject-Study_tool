@@ -9,7 +9,6 @@ services:
       PORT: "3000"
       USER_SERVICE_URL: http://user-service:8000
       CONTENT_SERVICE_URL: http://content-service:3001
-      LEARNING_SERVICE_URL: http://learning-service:3002
       ANALYTICS_SERVICE_URL: http://analytics-service:3003
       AI_SERVICE_URL: http://ai-service:3000
     ports:
@@ -53,8 +52,17 @@ services:
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       SMTP_USE_TLS: ${SMTP_USE_TLS:-false}
       SECURE_COOKIES: "false"
+      PYTHONPATH: /app
+      # Local Docker: ensure username/password test / test1234 exists on startup.
+      SEED_TEST_USER: ${SEED_TEST_USER:-true}
     ports:
       - "8001:8000"
+    command:
+      [
+        "sh",
+        "-c",
+        "if [ \"$$SEED_TEST_USER\" = \"true\" ]; then python scripts/seed_test_user.py; fi && exec uvicorn app.main:app --host 0.0.0.0 --port 8000",
+      ]
     depends_on:
       user-postgres:
         condition: service_healthy
@@ -70,6 +78,7 @@ services:
     restart: unless-stopped
 
   user-service-frontend:
+    profiles: ["demo"]
     build:
       context: .
       dockerfile: apps/user-service/frontend/Dockerfile
@@ -107,12 +116,6 @@ services:
       retries: 5
     restart: unless-stopped
 
-  learning-service:
-    build:
-      context: .
-      dockerfile: infrastructure/docker/Dockerfile.service
-    command: ["pnpm", "--filter", "@korean-learning/learning-service", "dev"]
-
   ai-service:
     build:
       context: .
@@ -146,6 +149,7 @@ services:
     restart: unless-stopped
 
   ai-service-frontend:
+    profiles: ["demo"]
     build:
       context: ./apps/ai-service/frontend
       dockerfile: Dockerfile
@@ -230,14 +234,6 @@ services:
       retries: 10
     restart: unless-stopped
 
-  learning-postgres:
-    image: postgres:17
-    environment:
-      POSTGRES_DB: learning_service
-      POSTGRES_PASSWORD: postgres
-    volumes:
-      - learning-postgres-data:/var/lib/postgresql/data
-
   ai-postgres:
     image: postgres:17
     environment:
@@ -275,7 +271,6 @@ services:
 volumes:
   user-postgres-data:
   content-postgres-data:
-  learning-postgres-data:
   ai-postgres-data:
   analytics-postgres-data:
   analytics-data:
