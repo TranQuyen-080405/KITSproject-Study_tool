@@ -66,10 +66,11 @@ Recommended Render configuration:
 Required environment variables:
 
 ```env
-USER_SERVICE_URL=https://<render-user-service>
-CONTENT_SERVICE_URL=https://<render-content-service>
-ANALYTICS_SERVICE_URL=https://<render-analytics-service>
-AI_SERVICE_URL=https://<render-ai-service>
+USER_SERVICE_URL=https://kits-user-service.onrender.com
+CONTENT_SERVICE_URL=https://kits-content-service.onrender.com
+LEARNING_SERVICE_URL=https://<render-learning-service>
+ANALYTICS_SERVICE_URL=https://kits-analytics-service.onrender.com
+AI_SERVICE_URL=https://AI-service.onrender.com
 ```
 
 Render provides `PORT` dynamically. Do not hardcode `PORT` unless the Render service configuration specifically requires it.

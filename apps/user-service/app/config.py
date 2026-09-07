@@ -24,10 +24,13 @@ class Settings(BaseSettings):
     reset_token_minutes: int = 30
     google_client_id: str = ""
     admin_emails: Annotated[list[str], NoDecode] = ["admin@example.com"]
-    frontend_url: str = "http://localhost:5173"
-    smtp_host: str = "localhost"
-    smtp_port: int = 1025
-    smtp_from: str = "kits@local.test"
+    frontend_url: str = "http://localhost:3000"
+    brevo_api_key: str = ""
+    email_from: str = ""
+    email_from_name: str = "HARU Learning"
+    smtp_host: str = "smtp.gmail.com"
+    smtp_port: int = 587
+    smtp_from: str = ""
     smtp_username: str = ""
     smtp_password: str = ""
     smtp_use_tls: bool = False

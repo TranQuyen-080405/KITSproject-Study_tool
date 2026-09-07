@@ -116,56 +116,20 @@ export function App() {
 
   const handleLogout = () => void clearAccount();
 
-  if (activePage === "chatbot") {
-    return <ChatbotPage account={account} onLogout={handleLogout} onNavigate={setActivePage} userId={account.id} />;
-  }
-  if (activePage === "dashboard") {
-    return (
-      <DashboardPage
-        account={account}
-        onLogout={handleLogout}
-        onNavigate={setActivePage}
-        onStartReview={(items, startIndex) => {
-          setReviewSession({ items, startIndex });
-          setActivePage("review");
-        }}
-        token={account.accessToken}
-      />
-    );
-  }
-  if (activePage === "review" && reviewSession) {
-    return (
-      <VocabReviewPage
-        account={account}
-        items={reviewSession.items}
-        onComplete={() => {
-          setReviewSession(null);
-          setActivePage("dashboard");
-        }}
-        onLogout={handleLogout}
-        onNavigate={setActivePage}
-        startIndex={reviewSession.startIndex}
-        token={account.accessToken}
-      />
-    );
-  }
-  if (activePage === "manage-content") {
-    return <ManageContentPage account={account} onLogout={handleLogout} onNavigate={setActivePage} />;
-  }
+  if (activePage === "chatbot") return <>{badge}<ChatbotPage onNavigate={setActivePage} userId={account.id} /></>;
+  if (activePage === "dashboard") return <>{badge}<DashboardPage onNavigate={setActivePage} token={account.accessToken} userId={account.id} /></>;
 
   if (activePage === "mcq" && selectedLessonId) {
-    return (
-      <McqPage
-        account={account}
-        lessonId={selectedLessonId}
-        onComplete={(correctCount, totalCount, reviewsRecorded, reviewsSyncFailed) => {
-          setResult({ correctCount, totalCount, reviewsRecorded, reviewsSyncFailed: reviewsSyncFailed ?? 0 });
-          setActivePage("result");
-        }}
-        onLogout={handleLogout}
-        onNavigate={setActivePage}
-      />
-    );
+    return <>{badge}<McqPage
+      lessonId={selectedLessonId}
+      userId={account.id}
+      accessToken={account.accessToken}
+      onComplete={(correctCount, totalCount) => {
+        setResult({ correctCount, totalCount });
+        setActivePage("result");
+      }}
+      onNavigate={setActivePage}
+    /></>;
   }
   if (activePage === "result") {
     return (

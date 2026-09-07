@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { recordQuizReviews } from "../api/analytics-api";
 import {
   checkLessonAnswer,
   fetchLessonDetail,
@@ -15,13 +16,20 @@ import "../styles/app.css";
 
 type McqPageProps = {
   lessonId: string;
-  account?: Account;
+  userId: string | number;
+  accessToken: string;
   onNavigate: (page: AppPage) => void;
   onComplete: (correctCount: number, totalCount: number, reviewsRecorded: number, reviewsSyncFailed?: number) => void;
   onLogout?: () => void;
 };
 
-export function McqPage({ lessonId, account, onNavigate, onComplete, onLogout }: McqPageProps) {
+export function McqPage({
+  lessonId,
+  userId,
+  accessToken,
+  onNavigate,
+  onComplete,
+}: McqPageProps) {
   const [lesson, setLesson] = useState<PublicLessonDetail>();
   const [questionIndex, setQuestionIndex] = useState(0);
   const [selectedAnswerIndex, setSelectedAnswerIndex] = useState<number>();
@@ -111,33 +119,9 @@ export function McqPage({ lessonId, account, onNavigate, onComplete, onLogout }:
         }),
       );
 
-      let reviewsRecorded = 0;
-      let reviewsSyncFailed = 0;
-
-      if (account) {
-        const reviewOutcomes = await Promise.allSettled(
-          results.flatMap((result) => {
-            if (!result.vocabularyId) {
-              return [];
-            }
-
-            const vocab = vocabById[result.vocabularyId];
-            return analyticsApi.recordReview(
-              {
-                userId: String(account.id),
-                vocabularyId: result.vocabularyId,
-                correct: result.correct,
-                word: vocab?.word,
-                translation: vocab?.meaning,
-              },
-              account.accessToken,
-            );
-          }),
-        );
-
-        reviewsRecorded = reviewOutcomes.filter((outcome) => outcome.status === "fulfilled").length;
-        reviewsSyncFailed = reviewOutcomes.filter((outcome) => outcome.status === "rejected").length;
-      }
+      void recordQuizReviews(userId, results, accessToken).catch((error: unknown) => {
+        console.warn("Không thể lưu thống kê Analytics.", error);
+      });
 
       onComplete(
         results.filter(({ correct }) => correct).length,
