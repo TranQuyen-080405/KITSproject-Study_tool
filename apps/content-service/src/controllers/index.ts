@@ -47,6 +47,42 @@ export async function listQuestions(request: Request, response: Response): Promi
   response.json({ questions, count: questions.length });
 }
 
+export async function listManagedQuestions(request: Request, response: Response): Promise<void> {
+  const questions = await contentService.listManagedQuestions(pathParam(request, "lessonId"));
+  response.json({ questions, count: questions.length });
+}
+
+export async function getManagedQuestion(request: Request, response: Response): Promise<void> {
+  response.json({
+    question: await contentService.getManagedQuestion(pathParam(request, "questionId")),
+  });
+}
+
+export async function updateLesson(request: Request, response: Response): Promise<void> {
+  response.json({
+    lesson: await contentService.updateLesson(pathParam(request, "lessonId"), request.body),
+  });
+}
+
+export async function deleteLesson(request: Request, response: Response): Promise<void> {
+  await contentService.deleteLesson(pathParam(request, "lessonId"));
+  response.status(204).send();
+}
+
+export async function updateQuestion(request: Request, response: Response): Promise<void> {
+  response.json({
+    question: await contentService.updateQuestion(
+      pathParam(request, "questionId"),
+      request.body,
+    ),
+  });
+}
+
+export async function deleteQuestion(request: Request, response: Response): Promise<void> {
+  await contentService.deleteQuestion(pathParam(request, "questionId"));
+  response.status(204).send();
+}
+
 export async function checkQuestion(request: Request, response: Response): Promise<void> {
   response.json(
     await contentService.checkQuestion(pathParam(request, "questionId"), request.body),

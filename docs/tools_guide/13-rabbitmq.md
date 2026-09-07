@@ -6,7 +6,7 @@ RabbitMQ là **hàng đợi tin nhắn**: service A gửi sự kiện (“user v
 
 ## 2. Vai trò trong dự án
 
-Learning Service sẽ **publish** learning events; Analytics Service sẽ **consume** để cập nhật dashboard — đúng nguyên tắc: Analytics không đọc database của Learning.
+Analytics Service sẽ **consume** domain events (khi có) để cập nhật dashboard — đúng nguyên tắc: Analytics không đọc database của service khác.
 
 Hiện mới có placeholder:
 

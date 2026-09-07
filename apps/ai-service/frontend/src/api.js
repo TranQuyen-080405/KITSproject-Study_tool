@@ -1,12 +1,17 @@
 const API_URL = import.meta.env.VITE_API_URL || "";
 
 export async function api(path, userId, options = {}) {
+  const resolvedUserId = String(userId ?? "").trim();
+  if (!resolvedUserId) {
+    throw new Error("x-user-id is required");
+  }
+
   let response;
   try {
     response = await fetch(`${API_URL}${path}`, {
       ...options,
       headers: {
-        "x-user-id": userId || "anonymous",
+        "x-user-id": resolvedUserId,
         ...(options.body ? { "Content-Type": "application/json" } : {}),
         ...options.headers,
       },
@@ -22,7 +27,9 @@ export async function api(path, userId, options = {}) {
     try {
       const data = await response.json();
       if (typeof data.detail === "string") message = data.detail;
-      else if (Array.isArray(data.detail)) {
+      else if (data.detail && typeof data.detail === "object" && data.detail.message) {
+        message = data.detail.message;
+      } else if (Array.isArray(data.detail)) {
         message = data.detail.map((item) => item.msg || JSON.stringify(item)).join("; ");
       } else if (data.error) {
         message = typeof data.error === "string" ? data.error : data.error.message || message;
@@ -36,4 +43,4 @@ export async function api(path, userId, options = {}) {
   return response.status === 204 ? null : response.json();
 }
 
-export const health = (userId = "anonymous") => api("/health", userId);
+export const health = (userId) => api("/health", userId);

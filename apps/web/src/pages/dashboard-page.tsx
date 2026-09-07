@@ -5,6 +5,8 @@ import {
   type AnalyticsDashboard,
 } from "../api/analytics-api";
 import { type AppPage, AppSidebar } from "../components/app-sidebar";
+import { BookIcon2D, BrainIcon2D, ClockIcon2D, TrophyIcon2D } from "../components/icons";
+import type { Account } from "../types/auth";
 import "../styles/app.css";
 
 type DashboardPageProps = {
@@ -26,6 +28,8 @@ function formatNextReviewAt(value: string | null): string {
 export function DashboardPage({ onNavigate, token, userId }: DashboardPageProps) {
   const [stats, setStats] = useState<AnalyticsDashboard>();
   const [error, setError] = useState("");
+  const [queueError, setQueueError] = useState("");
+  const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
     let isMounted = true;
@@ -49,7 +53,8 @@ export function DashboardPage({ onNavigate, token, userId }: DashboardPageProps)
 
   return (
     <div className="app-layout">
-      <AppSidebar activePage="dashboard" onNavigate={onNavigate} />
+      <AppSidebar account={account} activePage="dashboard" onLogout={onLogout} onNavigate={onNavigate} />
+
       <main className="dashboard-page">
         <header className="dashboard-header">
           <div>

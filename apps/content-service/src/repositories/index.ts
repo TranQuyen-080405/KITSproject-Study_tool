@@ -132,8 +132,81 @@ export class ContentRepository {
   getQuestionForCheck(questionId: string) {
     return prisma.question.findUnique({
       where: { id: questionId },
-      select: { id: true, vocabularyId: true, correctOptionIndex: true },
+      select: {
+        id: true,
+        lessonId: true,
+        vocabularyId: true,
+        correctOptionIndex: true,
+        prompt: true,
+        options: true,
+      },
     });
+  }
+
+  getManagedQuestion(questionId: string) {
+    return prisma.question.findUnique({ where: { id: questionId } });
+  }
+
+  async listManagedQuestions(lessonId: string) {
+    await this.requireLesson(prisma, lessonId);
+    return prisma.question.findMany({
+      where: { lessonId },
+      orderBy: { createdAt: "asc" },
+    });
+  }
+
+  async updateLesson(lessonId: string, data: CreateLessonRecord) {
+    try {
+      return await prisma.lesson.update({ where: { id: lessonId }, data });
+    } catch {
+      return null;
+    }
+  }
+
+  async deleteLesson(lessonId: string) {
+    try {
+      await prisma.lesson.delete({ where: { id: lessonId } });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async updateQuestion(questionId: string, data: CreateQuestionRecord) {
+    return prisma.$transaction(async (transaction) => {
+      const existing = await transaction.question.findUnique({
+        where: { id: questionId },
+        select: { id: true, lessonId: true },
+      });
+      if (!existing) return null;
+
+      const vocabulary = data.vocabularyId
+        ? await transaction.vocabulary.findUnique({
+            where: { id: data.vocabularyId },
+            select: { lessonId: true },
+          })
+        : null;
+      assertTargetVocabulary(existing.lessonId, data.vocabularyId, vocabulary);
+
+      return transaction.question.update({
+        where: { id: questionId },
+        data: {
+          prompt: data.prompt,
+          options: data.options,
+          correctOptionIndex: data.correctOptionIndex,
+          vocabularyId: data.vocabularyId,
+        },
+      });
+    });
+  }
+
+  async deleteQuestion(questionId: string) {
+    try {
+      await prisma.question.delete({ where: { id: questionId } });
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   private async requireLesson(

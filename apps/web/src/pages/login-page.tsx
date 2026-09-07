@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
+import { ArrowLeftIcon2D, EyeIcon2D, EyeOffIcon2D, GoogleLogo2D } from "../components/icons";
 import { authService } from "../services/auth.service";
 import type { Account } from "../types/auth";
 import "../styles/app.css";
@@ -64,7 +65,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
         size: "large",
         text: "continue_with",
         shape: "rectangular",
-        width: 340,
+        width: 320,
         locale: "vi",
       });
     };
@@ -109,7 +110,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
         sessionStorage.setItem("kits_pending_email", email);
         setPassword("");
         switchMode("verify-email");
-        setInfo("Đăng ký thành công. Nhập mã OTP đã gửi tới email.");
+        setInfo("Đăng ký thành công! Nhập mã OTP 6 chữ số đã gửi tới email.");
         return;
       }
 
@@ -117,7 +118,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
         await authService.verifyEmail({ email, code });
         setCode("");
         switchMode("login");
-        setInfo("Xác minh email thành công. Hãy đăng nhập.");
+        setInfo("Xác minh email thành công! Bạn có thể đăng nhập ngay.");
         return;
       }
 
@@ -135,22 +136,11 @@ export function LoginPage({ onLogin }: LoginPageProps) {
       switchMode("login");
       setInfo(result.message);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Không thể hoàn tất.");
+      setError(reason instanceof Error ? reason.message : "Không thể hoàn tất yêu cầu.");
     } finally {
       setIsSubmitting(false);
     }
   }
-
-  const title =
-    mode === "login"
-      ? "Đăng nhập"
-      : mode === "register"
-        ? "Tạo tài khoản"
-        : mode === "verify-email"
-          ? "Xác minh email"
-          : mode === "forgot"
-            ? "Quên mật khẩu"
-            : "Đặt mật khẩu mới";
 
   const canSubmit =
     mode === "login"
@@ -166,154 +156,222 @@ export function LoginPage({ onLogin }: LoginPageProps) {
   return (
     <main className="login-page">
       <form className="login-card" onSubmit={submit}>
-        <p className="eyebrow">HARU LEARNING</p>
-        <h1>{title}</h1>
-        {mode === "login" ? <p>Đăng nhập để lưu tiến độ học theo tài khoản của bạn.</p> : null}
-        {mode === "register" ? <p>Mật khẩu tối thiểu 8 ký tự. Sau đăng ký cần xác minh email.</p> : null}
-        {mode === "verify-email" ? <p>Nhập mã 6 chữ số gửi tới email của bạn.</p> : null}
-        {mode === "forgot" ? <p>Nhập email đã đăng ký để nhận mã khôi phục.</p> : null}
-        {mode === "reset" ? <p>Nhập mã trong email và chọn mật khẩu mới.</p> : null}
+        {(mode === "verify-email" || mode === "forgot" || mode === "reset") && (
+          <div style={{ textAlign: "center", marginBottom: "8px" }}>
+            <h1 style={{ fontSize: "18px", fontWeight: 800, margin: 0 }}>
+              {mode === "verify-email"
+                ? "Xác minh Email OTP"
+                : mode === "forgot"
+                  ? "Quên mật khẩu"
+                  : "Đặt lại mật khẩu"}
+            </h1>
+          </div>
+        )}
 
-        {mode === "login" || mode === "register" ? (
-          <label>
-            Tên đăng nhập
-            <input onChange={(event) => setUsername(event.target.value)} value={username} />
-          </label>
-        ) : null}
-
-        {mode === "register" ? (
-          <label>
-            Tên hiển thị
-            <input onChange={(event) => setDisplayName(event.target.value)} value={displayName} />
-          </label>
-        ) : null}
-
-        {mode === "register" || mode === "verify-email" || mode === "forgot" || mode === "reset" ? (
-          <label>
-            Email
-            <input
-              onChange={(event) => setEmail(event.target.value)}
-              type="email"
-              value={email}
-            />
-          </label>
-        ) : null}
-
-        {mode === "login" || mode === "register" ? (
-          <label>
-            Mật khẩu
-            <input
-              onChange={(event) => setPassword(event.target.value)}
-              type={showPassword ? "text" : "password"}
-              value={password}
-            />
-          </label>
-        ) : null}
-
-        {mode === "reset" ? (
-          <label>
-            Mật khẩu mới
-            <input
-              onChange={(event) => setNewPassword(event.target.value)}
-              type={showPassword ? "text" : "password"}
-              value={newPassword}
-            />
-          </label>
-        ) : null}
-
-        {mode === "verify-email" || mode === "reset" ? (
-          <label>
-            Mã OTP
-            <input
-              inputMode="numeric"
-              maxLength={6}
-              onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
-              value={code}
-            />
-          </label>
-        ) : null}
-
-        {mode === "login" || mode === "register" || mode === "reset" ? (
-          <label className="login-checkbox">
-            <input
-              checked={showPassword}
-              onChange={(event) => setShowPassword(event.target.checked)}
-              type="checkbox"
-            />
-            Hiện mật khẩu
-          </label>
-        ) : null}
-
-        {mode === "login" ? (
-          <button
-            className="login-text-link login-text-link-right"
-            disabled={isSubmitting}
-            onClick={() => switchMode("forgot")}
-            type="button"
-          >
-            quên mật khẩu?
-          </button>
-        ) : null}
-
-        {info ? <p className="page-status">{info}</p> : null}
-        {error ? <p className="page-status page-status-error">{error}</p> : null}
-
-        <button disabled={isSubmitting || !canSubmit} type="submit">
-          {isSubmitting
-            ? "Đang xử lý..."
-            : mode === "login"
-              ? "Đăng nhập"
-              : mode === "register"
-                ? "Tạo tài khoản"
-                : mode === "verify-email"
-                  ? "Xác minh email"
-                  : mode === "forgot"
-                    ? "Gửi mã khôi phục"
-                    : "Đổi mật khẩu"}
-        </button>
-
-        {mode === "login" ? (
-          <>
-            <div className="login-divider">
-              <span>hoặc</span>
-            </div>
-            {GOOGLE_CLIENT_ID ? (
-              <div aria-label="Tiếp tục với Google" className="login-google-button" ref={googleButton} />
-            ) : (
-              <button
-                className="login-google-fallback"
-                disabled={isSubmitting}
-                onClick={() =>
-                  setError("Google Login chưa được cấu hình. Thêm VITE_GOOGLE_CLIENT_ID rồi chạy lại web.")
-                }
-                type="button"
-              >
-                Tiếp tục với Google
-              </button>
-            )}
-          </>
-        ) : null}
-
-        <div className="login-footer-links">
-          {mode === "login" ? (
+        {(mode === "login" || mode === "register") && (
+          <div className="auth-tab-container">
             <button
-              className="login-text-link login-text-link-right"
-              disabled={isSubmitting}
-              onClick={() => switchMode("register")}
-              type="button"
-            >
-              tạo tài khoản
-            </button>
-          ) : (
-            <button
-              className="login-text-link login-text-link-right"
-              disabled={isSubmitting}
+              className={`auth-tab-btn ${mode === "login" ? "active" : ""}`}
               onClick={() => switchMode("login")}
               type="button"
             >
-              đăng nhập
+              Đăng nhập
             </button>
-          )}
+            <button
+              className={`auth-tab-btn ${mode === "register" ? "active" : ""}`}
+              onClick={() => switchMode("register")}
+              type="button"
+            >
+              Đăng ký
+            </button>
+            <div className={`auth-tab-underline ${mode === "register" ? "register-active" : "login-active"}`} />
+          </div>
+        )}
+
+        {(mode === "login" || mode === "register") && (
+          <input
+            aria-label="Tên đăng nhập"
+            autoComplete="username"
+            onChange={(e) => setUsername(e.target.value)}
+            placeholder="Tên đăng nhập"
+            required
+            value={username}
+          />
+        )}
+
+        <div className={`auth-expandable-field ${mode === "register" ? "expanded" : ""}`}>
+          <div>
+            <input
+              aria-label="Tên hiển thị"
+              onChange={(e) => setDisplayName(e.target.value)}
+              placeholder="Tên hiển thị"
+              value={displayName}
+            />
+            <input
+              aria-label="Địa chỉ Email"
+              autoComplete="email"
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Địa chỉ Email"
+              required={mode === "register"}
+              type="email"
+              value={email}
+            />
+          </div>
+        </div>
+
+        {(mode === "verify-email" || mode === "forgot" || mode === "reset") && (
+          <input
+            aria-label="Địa chỉ Email"
+            autoComplete="email"
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Địa chỉ Email"
+            required
+            type="email"
+            value={email}
+          />
+        )}
+
+        {(mode === "login" || mode === "register") && (
+          <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+            <input
+              aria-label="Mật khẩu"
+              autoComplete={mode === "login" ? "current-password" : "new-password"}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Mật khẩu"
+              required
+              style={{ paddingRight: "36px" }}
+              type={showPassword ? "text" : "password"}
+              value={password}
+            />
+            <button
+              aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+              onClick={() => setShowPassword((prev) => !prev)}
+              style={{ position: "absolute", right: "8px", background: "none", border: 0, color: "var(--text-muted)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: "2px" }}
+              type="button"
+            >
+              {showPassword ? <EyeOffIcon2D size={16} /> : <EyeIcon2D size={16} />}
+            </button>
+          </div>
+        )}
+
+        {mode === "reset" && (
+          <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+            <input
+              aria-label="Mật khẩu mới"
+              autoComplete="new-password"
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="Mật khẩu mới"
+              required
+              style={{ paddingRight: "36px" }}
+              type={showPassword ? "text" : "password"}
+              value={newPassword}
+            />
+            <button
+              aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+              onClick={() => setShowPassword((prev) => !prev)}
+              style={{ position: "absolute", right: "8px", background: "none", border: 0, color: "var(--text-muted)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: "2px" }}
+              type="button"
+            >
+              {showPassword ? <EyeOffIcon2D size={16} /> : <EyeIcon2D size={16} />}
+            </button>
+          </div>
+        )}
+
+        {(mode === "verify-email" || mode === "reset") && (
+          <input
+            aria-label="Mã OTP 6 chữ số"
+            inputMode="numeric"
+            maxLength={6}
+            onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+            placeholder="Mã OTP 6 chữ số"
+            required
+            style={{ letterSpacing: code ? "0.25em" : "normal", textAlign: "center", fontSize: code ? "16px" : "13.5px", fontWeight: "700" }}
+            value={code}
+          />
+        )}
+
+        <div className={`auth-forgot-field ${mode === "login" ? "expanded" : ""}`}>
+          <div>
+            <button
+              className="interactive-element"
+              onClick={() => switchMode("forgot")}
+              style={{ background: "none", border: 0, color: "var(--brand-primary)", fontSize: "12px", fontWeight: 700, cursor: "pointer" }}
+              type="button"
+            >
+              Quên mật khẩu?
+            </button>
+          </div>
+        </div>
+
+        {info && <p className="page-status page-status-success" style={{ padding: "6px 10px", fontSize: "12px" }}>{info}</p>}
+        {error && <p className="page-status page-status-error" style={{ padding: "6px 10px", fontSize: "12px" }}>{error}</p>}
+
+        <button
+          className="login-primary-button interactive-element"
+          disabled={isSubmitting || !canSubmit}
+          style={{ padding: "8px 14px", marginTop: "4px" }}
+          type="submit"
+        >
+          <div className="auth-btn-label-wrapper">
+            <span className={`auth-btn-label ${mode === "login" ? "active-mode" : "hidden-mode"}`}>
+              {isSubmitting ? "Đang xử lý..." : "Đăng nhập"}
+            </span>
+            <span className={`auth-btn-label ${mode === "register" ? "active-mode" : "hidden-mode"}`}>
+              {isSubmitting ? "Đang xử lý..." : "Tạo tài khoản"}
+            </span>
+            {mode !== "login" && mode !== "register" && (
+              <span className="auth-btn-label active-mode">
+                {isSubmitting
+                  ? "Đang xử lý..."
+                  : mode === "verify-email"
+                    ? "Xác minh OTP"
+                    : mode === "forgot"
+                      ? "Gửi mã OTP"
+                      : "Cập nhật mật khẩu"}
+              </span>
+            )}
+          </div>
+        </button>
+
+        <div className={`auth-expandable-field ${mode === "login" || mode === "register" ? "expanded" : ""}`}>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", color: "var(--text-muted)", fontSize: "11px", margin: "2px 0" }}>
+              <div style={{ flex: 1, height: "1px", background: "var(--border-glass)" }} />
+              <span>hoặc</span>
+              <div style={{ flex: 1, height: "1px", background: "var(--border-glass)" }} />
+            </div>
+
+            {GOOGLE_CLIENT_ID ? (
+              <div aria-label="Đăng nhập bằng Google" ref={googleButton} style={{ display: "flex", justifyContent: "center" }} />
+            ) : (
+              <button
+                className="manage-secondary-button interactive-element"
+                disabled={isSubmitting}
+                onClick={() => setError("Google Client ID chưa được cấu hình.")}
+                style={{ width: "100%", minHeight: "36px", padding: "6px 12px", justifyContent: "center", gap: "8px", fontSize: "13px" }}
+                type="button"
+              >
+                <GoogleLogo2D size={16} />
+                <span>Tiếp tục với Google</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className={`auth-expandable-field ${mode !== "login" && mode !== "register" ? "expanded" : ""}`}>
+          <div>
+            <div style={{ textAlign: "center", marginTop: "2px" }}>
+              <button
+                className="interactive-element"
+                onClick={() => switchMode("login")}
+                style={{ background: "none", border: 0, color: "var(--brand-primary)", fontSize: "12px", fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                type="button"
+              >
+                <ArrowLeftIcon2D size={13} />
+                <span>Quay lại Đăng nhập</span>
+              </button>
+            </div>
+          </div>
         </div>
       </form>
     </main>

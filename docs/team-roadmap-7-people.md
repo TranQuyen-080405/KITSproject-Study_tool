@@ -12,7 +12,7 @@ Lộ trình này kéo dài **12 tuần**, với mục tiêu bắt buộc là **W
 Luồng demo bắt buộc ở tuần 8:
 
 ```text
-Web → API Gateway → User / Content / Learning Service → database riêng
+Web → API Gateway → User / Content / Analytics Service → database riêng
 ```
 
 Mobile, AI generation và RabbitMQ analytics là milestone tiếp theo, chỉ bắt đầu sau khi Web MVP ổn định. Mỗi người có một vùng ownership lâu dài; họ không chỉ làm một task rồi kết thúc.
@@ -25,9 +25,9 @@ Mobile, AI generation và RabbitMQ analytics là milestone tiếp theo, chỉ b�
 | 2 | Web Engineer | `apps/web/` | Không gọi trực tiếp service hoặc DB |
 | 3 | Mobile Engineer | `apps/mobile/` | Không làm backend / Gateway |
 | 4 | User & Gateway Engineer | `apps/user-service/`, `apps/api-gateway/` | Không sở hữu flashcard, SRS hoặc dashboard data |
-| 5 | Content & AI Engineer | `apps/content-service/`, `apps/ai-service/` | Không sở hữu session học / SRS |
-| 6 | Learning Engineer | `apps/learning-service/` | Không sửa DB Content hoặc Analytics |
-| 7 | Platform & Analytics Engineer | `apps/analytics-service/`, `infrastructure/`, `docker-compose.yml`, `.env.example` | Không đọc trực tiếp DB của Learning để làm dashboard |
+| 5 | Content & AI Engineer | `apps/content-service/`, `apps/ai-service/` | Không sở hữu dashboard analytics |
+| 6 | Analytics Engineer | `apps/analytics-service/` | Không sửa DB Content hoặc User |
+| 7 | Platform Engineer | `infrastructure/`, `docker-compose.yml`, `.env.example` | Không đọc trực tiếp DB của service khác để làm dashboard |
 
 ## 3. Bảy workstream cụ thể
 
@@ -131,32 +131,32 @@ Mobile, AI generation và RabbitMQ analytics là milestone tiếp theo, chỉ b�
 - Content vẫn là data owner của flashcard.
 - AI failure không làm hỏng CRUD/học core flow.
 
-### 6. Learning Engineer
+### 6. Analytics Engineer
 
 **Làm trong code**
-- Tuần 6–7: `apps/learning-service/` sở hữu study session, review record, mastered status, due review và initial SRS scheduling.
-- Tuần 9–10: định nghĩa/publish event `StudyCompleted` qua RabbitMQ sau khi core flow ổn định.
+- Tuần 6–7: `apps/analytics-service/` sở hữu review record, mastered status, due review và SRS scheduling nhẹ.
+- Tuần 9–10: định nghĩa/consume event học tập qua RabbitMQ sau khi core flow ổn định.
 - Tạo test cho scheduling và transition thuộc/chưa thuộc.
 
 **Làm ngoài code**
 - Chốt yêu cầu SRS “phiên bản 1” có thể giải thích được (input, output, due date).
 - Pair với Web để xác nhận study interaction.
-- Cung cấp event contract cho Platform/Analytics.
+- Cung cấp event/API contract cho Platform.
 
 **Deliverables**
 - Học một thẻ → lưu review → cập nhật due review/progress.
-- Event contract `StudyCompleted` có event ID để consumer có thể idempotent.
+- Event/API contract có thể idempotent phía consumer.
 
 **Hoàn thành khi**
-- Learning không thay đổi Flashcard data của Content.
-- Dashboard đọc derived data, không khiến Analytics truy vấn Learning DB.
+- Analytics không thay đổi Flashcard data của Content.
+- Dashboard đọc derived data từ Analytics DB/read model riêng.
 
-### 7. Platform & Analytics Engineer
+### 7. Platform Engineer
 
 **Làm trong code**
 - Tuần 1: hoàn thiện local runbook, Docker Compose, Postgres database/volume riêng, RabbitMQ local, `.env.example`.
 - Tuần 8: hỗ trợ chạy end-to-end Web MVP bằng local environment có thể lặp lại.
-- Tuần 9–11: `apps/analytics-service/` consume `StudyCompleted`, xây read model dashboard, expose API qua Gateway.
+- Tuần 9–11: hỗ trợ hạ tầng cho Analytics consume events nếu cần.
 
 **Làm ngoài code**
 - Owner của `docker compose` workflow và troubleshooting guide.
@@ -169,7 +169,7 @@ Mobile, AI generation và RabbitMQ analytics là milestone tiếp theo, chỉ b�
 
 **Hoàn thành khi**
 - Mỗi service có DB/volume riêng; không có shared Prisma client.
-- Analytics chỉ tiêu thụ event và sở hữu DB/read model riêng.
+- Analytics chỉ tiêu thụ event/API và sở hữu DB/read model riêng.
 
 ## 4. Lộ trình end-to-end 12 tuần
 

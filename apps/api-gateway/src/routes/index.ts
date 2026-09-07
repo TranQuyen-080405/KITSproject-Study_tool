@@ -12,7 +12,6 @@ type RouteTarget = {
 const routeTargets: RouteTarget[] = [
   { prefixes: ["/api/v1/auth", "/api/v1/users"], service: "user", displayName: "User" },
   { prefixes: ["/api/v1/content"], service: "content", displayName: "Content" },
-  { prefixes: ["/api/v1/learning"], service: "learning", displayName: "Learning" },
   { prefixes: ["/api/v1/analytics"], service: "analytics", displayName: "Analytics" },
   { prefixes: ["/api/v1/ai"], service: "ai", displayName: "AI" },
 ];

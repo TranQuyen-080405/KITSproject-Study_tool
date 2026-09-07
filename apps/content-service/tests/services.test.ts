@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { AppError } from "../src/errors.js";
 import {
   gradeQuestion,
+  inferVocabularyId,
   parseLessonInput,
   parseQuestionInput,
   parseVocabularyInput,
@@ -48,6 +49,13 @@ describe("content input validation", () => {
         correctOptionIndex: 0,
       }).vocabularyId,
     ).toBeNull();
+    expect(
+      parseQuestionInput({
+        prompt: "Chọn câu chào phù hợp",
+        options: ["안녕하세요", "감사합니다", "죄송합니다", "안녕히 가세요"],
+        correctOptionIndex: 0,
+      }).vocabularyId,
+    ).toBeNull();
   });
 
   it("blocks a target vocabulary from another lesson", () => {
@@ -61,13 +69,28 @@ describe("content input validation", () => {
 describe("question grading", () => {
   const question = { vocabularyId: "vocabulary-1", correctOptionIndex: 2 };
 
+  it("infers vocabulary from prompt or correct meaning", () => {
+    const vocabulary = [
+      { id: "vocabulary-1", word: "안녕하세요", meaning: "xin chào" },
+      { id: "vocabulary-2", word: "감사합니다", meaning: "cảm ơn" },
+    ];
+    expect(
+      inferVocabularyId("안녕하세요 có nghĩa là gì?", ["xin chào", "cảm ơn", "xin lỗi", "tạm biệt"], 0, vocabulary),
+    ).toBe("vocabulary-1");
+    expect(
+      inferVocabularyId("Chọn nghĩa", ["xin lỗi", "cảm ơn", "xin chào", "tạm biệt"], 1, vocabulary),
+    ).toBe("vocabulary-2");
+  });
+
   it("returns a mastery candidate only for the correct answer", () => {
     expect(gradeQuestion(question, 2)).toEqual({
       correct: true,
+      vocabularyId: "vocabulary-1",
       masteryCandidateVocabularyId: "vocabulary-1",
     });
     expect(gradeQuestion(question, 1)).toEqual({
       correct: false,
+      vocabularyId: "vocabulary-1",
       masteryCandidateVocabularyId: null,
     });
   });
@@ -81,6 +104,7 @@ describe("question grading", () => {
   it("returns no mastery candidate for a correct general question", () => {
     expect(gradeQuestion({ vocabularyId: null, correctOptionIndex: 0 }, 0)).toEqual({
       correct: true,
+      vocabularyId: null,
       masteryCandidateVocabularyId: null,
     });
   });

@@ -34,6 +34,7 @@ Open `http://localhost:5173`.
 ## Development
 
 ```bash
+corepack pnpm run:all
 corepack pnpm --filter @korean-learning/web dev
 corepack pnpm --filter @korean-learning/web test
 corepack pnpm --filter @korean-learning/web build

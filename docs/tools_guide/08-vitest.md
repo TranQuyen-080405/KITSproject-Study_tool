@@ -10,13 +10,13 @@ Root và từng app đã khai báo script `"test": "vitest run --passWithNoTests
 
 ## 3. Cách thức hoạt động
 
-Vitest tìm file test (thường `*.test.ts` / trong `tests/`) → chạy các hàm `test` / `expect` → in kết quả. Sau này Learning Service có thể thêm test cho SRS trong `apps/learning-service/tests/`.
+Vitest tìm file test (thường `*.test.ts` / trong `tests/`) → chạy các hàm `test` / `expect` → in kết quả.
 
 ## 4. Các câu lệnh (Commands) & Cú pháp thường dùng
 
 ```bash
 corepack pnpm test
-corepack pnpm --filter @korean-learning/learning-service test
+corepack pnpm --filter @korean-learning/content-service test
 vitest run
 vitest          # chế độ watch (khi dùng trực tiếp)
 ```

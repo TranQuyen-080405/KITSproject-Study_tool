@@ -1,0 +1,69 @@
+# Lệnh chạy local (từ root repo)
+
+## Windows — 1 file chạy tất cả (ẩn terminal)
+
+Double-click hoặc:
+
+run.cmd
+
+- Không mở nhiều cửa sổ terminal (process Hidden).
+- Log: `.run-logs\`
+- Không gọi Docker.
+- Cần Postgres host sẵn trên `:5432` (DB: `user_service`, `content_service`, `ai_service`).
+- Lần đầu: tự tạo `.venv` + `pip install` cho user-service và ai-service.
+- user-service: đọc `apps/user-service/venv.env` (`PYTHON_EXE=py -3.13`, cần >= 3.11).
+- Lần sau: dùng lại `.venv` đã có (tự rebuild nếu Python trong venv quá cũ).
+- Tự `prisma migrate deploy` + seed bài học mẫu cho content-service.
+- Tự seed user `test` / `test1234` khi user-service sẵn sàng.
+- Nhấn phím trong cửa sổ run.cmd để STOP tất cả.
+
+## Cài dependency Node (1 lần / sau khi đổi package)
+
+corepack enable
+corepack pnpm install
+
+## Chạy tất cả Node apps (web + gateway + content + analytics)
+
+corepack pnpm run:all
+
+## Chạy từng service
+
+corepack pnpm run:web
+corepack pnpm run:gateway
+corepack pnpm run:content
+corepack pnpm run:analytics
+corepack pnpm run:user
+corepack pnpm run:ai
+corepack pnpm run:mobile
+
+## Port
+
+run:all          → web :5173, gateway :3000, content :3001, analytics :3003
+run:web          → http://localhost:5173
+run:gateway      → http://localhost:3000
+run:content      → http://localhost:3001
+run:analytics    → http://localhost:3003
+run:user         → http://localhost:8001   (Python uvicorn; cần venv + Postgres)
+run:ai           → http://localhost:3004   (Python uvicorn; cần venv + Postgres + LLM_API_KEY)
+run:mobile       → Expo CLI
+
+## Docker (khi cần full stack + Postgres)
+
+docker compose up -d --build
+
+## Seed test (khi stack Docker đã chạy)
+
+docker compose exec user-service python scripts/seed_test_user.py
+docker compose exec content-service pnpm --filter @korean-learning/content-service seed:test
+
+## Tài khoản test
+
+username: test
+password: test1234
+email:    test@local.test
+
+## Ghi chú
+
+- run:all không gồm user-service / ai-service (Python) — dùng run.cmd để gồm cả hai + seed test user.
+- run:user / run:ai cần Postgres tương ứng đang chạy.
+- Web local proxy /api → http://localhost:3000 (API Gateway).

@@ -32,8 +32,9 @@ docker compose exec content-service \
 - `Question`: câu hỏi MCQ, đúng 4 lựa chọn, đáp án đúng và `vocabularyId` tùy chọn.
 
 Một Lesson có nhiều Vocabulary và Question. Một Vocabulary có thể được nhiều
-Question kiểm tra. Khi trả lời đúng, API chỉ trả `masteryCandidateVocabularyId`;
-client/Learning Service dùng ID này để ghi nhận tiến độ sau này.
+Question kiểm tra. Response `check` luôn trả `vocabularyId` nếu câu gắn từ;
+client ghi Analytics với `vocabularyId` + `correct` (đúng và sai).
+`masteryCandidateVocabularyId` giữ tương thích (= `vocabularyId` khi trả lời đúng).
 Xóa Lesson sẽ cascade Vocabulary/Question. Xóa Vocabulary giữ lại Question và
 đặt `vocabularyId = NULL`.
 
@@ -115,15 +116,17 @@ Content-Type: application/json
 ```json
 {
   "correct": true,
+  "vocabularyId": "<vocabulary-id>",
   "masteryCandidateVocabularyId": "<vocabulary-id>"
 }
 ```
 
-Sai:
+Sai (vẫn có vocabularyId nếu câu gắn từ):
 
 ```json
 {
   "correct": false,
+  "vocabularyId": "<vocabulary-id>",
   "masteryCandidateVocabularyId": null
 }
 ```

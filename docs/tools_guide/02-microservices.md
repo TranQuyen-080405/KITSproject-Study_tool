@@ -15,9 +15,8 @@ App học từ vựng Hàn sẽ có đăng nhập, flashcard, SRS, AI, thống k
 | API Gateway | Cổng vào từ web/mobile |
 | User | Tài khoản, hồ sơ |
 | Content | Flashcard / từ vựng |
-| Learning | Học, review, SRS (sau này) |
-| AI | Gọi LLM (sau này) |
-| Analytics | Dashboard / thống kê (sau này nhận event) |
+| AI | Gọi LLM |
+| Analytics | Review/SRS nhẹ, dashboard |
 
 Mỗi business service sẽ có **database riêng** (database-per-service).
 
@@ -27,7 +26,6 @@ Luồng dự kiến:
 
 ```text
 Web / Mobile → API Gateway → các service (REST)
-Learning events → RabbitMQ → Analytics
 ```
 
 Hiện tại mới có khung thư mục và file placeholder — chưa có logic nghiệp vụ.
@@ -55,7 +53,6 @@ Các app backend trong repo:
 apps/api-gateway/
 apps/user-service/
 apps/content-service/
-apps/learning-service/
 apps/ai-service/
 apps/analytics-service/
 ```

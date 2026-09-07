@@ -6,7 +6,7 @@
 
 ## 2. Vai trò trong dự án
 
-Mọi service (user, content, learning, ai, analytics) và gateway dùng pattern giống nhau để team dễ nhảy giữa service mà không học layout mới. Logic nghiệp vụ **không** nhét chung một folder `shared-business-logic`.
+Mọi service (user, content, ai, analytics) và gateway dùng pattern giống nhau để team dễ nhảy giữa service mà không học layout mới. Logic nghiệp vụ **không** nhét chung một folder `shared-business-logic`.
 
 ## 3. Cách thức hoạt động
 
@@ -32,10 +32,10 @@ routes → controllers → services → repositories → database (Prisma/Postgr
 
 ```bash
 # Kiểm tra TypeScript của một service
-corepack pnpm --filter @korean-learning/learning-service typecheck
+corepack pnpm --filter @korean-learning/content-service typecheck
 
 # Chạy test của một service
-corepack pnpm --filter @korean-learning/learning-service test
+corepack pnpm --filter @korean-learning/content-service test
 ```
 
 ## 5. Ví dụ thực tế từ Source Code
