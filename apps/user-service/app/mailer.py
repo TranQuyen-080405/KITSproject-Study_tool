@@ -1,4 +1,6 @@
 import logging
+import smtplib
+from email.message import EmailMessage
 
 import requests
 
@@ -10,9 +12,20 @@ BREVO_SEND_URL = "https://api.brevo.com/v3/smtp/email"
 
 
 def send_email(to: str, subject: str, body: str) -> None:
-    """Send transactional email through Brevo HTTPS API."""
+    """Use Brevo when configured; otherwise send through the configured SMTP server."""
     if not settings.brevo_api_key:
-        raise RuntimeError("BREVO_API_KEY is not configured")
+        message = EmailMessage()
+        message["From"] = settings.smtp_from or settings.email_from or "haru@local.test"
+        message["To"] = to
+        message["Subject"] = subject
+        message.set_content(body)
+        with smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=10) as smtp:
+            if settings.smtp_use_tls:
+                smtp.starttls()
+            if settings.smtp_username:
+                smtp.login(settings.smtp_username, settings.smtp_password)
+            smtp.send_message(message)
+        return
 
     if not settings.email_from:
         raise RuntimeError("EMAIL_FROM is not configured")

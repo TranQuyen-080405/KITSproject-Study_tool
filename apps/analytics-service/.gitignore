@@ -1,2 +1,4 @@
 .analytics-data.json
 .analytics-data.json.tmp
+
+src/generated/prisma/

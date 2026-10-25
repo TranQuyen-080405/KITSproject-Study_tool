@@ -15,11 +15,13 @@ const baseUrl = (process.env.CONTENT_API_URL ?? "http://localhost:3001/api/v1/co
   /\/$/,
   "",
 );
+const accessToken = process.env.ACCESS_TOKEN;
+if (!accessToken) throw new Error("Set ACCESS_TOKEN to a valid User Service bearer token for a test account.");
 const exchanges = [];
 const cases = [];
 
 async function call(caseId, name, route, init = {}) {
-  const headers = init.body ? { "content-type": "application/json" } : {};
+  const headers = { authorization: `Bearer ${accessToken}`, ...(init.body ? { "content-type": "application/json" } : {}) };
   const startedAt = new Date().toISOString();
   const start = performance.now();
   const response = await fetch(`${baseUrl}${route}`, { ...init, headers });
@@ -31,7 +33,7 @@ async function call(caseId, name, route, init = {}) {
     endpoint: `${baseUrl}${route}`,
     method: init.method ?? "GET",
     request: {
-      headers,
+      headers: { ...headers, authorization: "[REDACTED]" },
       payload: init.body ? JSON.parse(init.body) : null,
     },
     response: {

@@ -1,0 +1,16 @@
+**/node_modules
+**/.venv
+**/venv
+**/.env
+**/.env.local
+**/.expo
+**/dist
+**/dist-web
+**/__pycache__
+**/*.log
+.git
+.run-logs
+local
+scratch
+apps/mobile/android
+apps/mobile/ios

@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { recordQuizReviews } from "../api/analytics-api";
+import { useEffect, useRef, useState } from "react";
+import { submitBatchStudySession } from "../api/analytics-api";
 import {
   checkLessonAnswer,
   fetchLessonDetail,
@@ -7,10 +7,10 @@ import {
   type ContentVocabulary,
   type PublicLessonDetail,
 } from "../api/lessons-api";
-import { analyticsApi } from "../api/analytics-api";
+
 import { inferVocabularyFromQuestion } from "../lib/infer-vocabulary";
 import { AppPage, AppSidebar } from "../components/app-sidebar";
-import { ArrowLeftIcon2D, ArrowRightIcon2D } from "../components/icons";
+import { ArrowLeftIcon2D, ArrowRightIcon2D, ClockIcon2D } from "../components/icons";
 import type { Account } from "../types/auth";
 import "../styles/app.css";
 
@@ -20,8 +20,15 @@ type McqPageProps = {
   accessToken: string;
   onNavigate: (page: AppPage) => void;
   onComplete: (correctCount: number, totalCount: number, reviewsRecorded: number, reviewsSyncFailed?: number) => void;
+  account?: Account;
   onLogout?: () => void;
 };
+
+function formatTime(seconds: number): string {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+}
 
 export function McqPage({
   lessonId,
@@ -29,6 +36,8 @@ export function McqPage({
   accessToken,
   onNavigate,
   onComplete,
+  account,
+  onLogout,
 }: McqPageProps) {
   const [lesson, setLesson] = useState<PublicLessonDetail>();
   const [questionIndex, setQuestionIndex] = useState(0);
@@ -39,6 +48,22 @@ export function McqPage({
   const [vocabById, setVocabById] = useState<Record<string, { word: string; meaning: string }>>({});
   const [vocabularies, setVocabularies] = useState<ContentVocabulary[]>([]);
   const [errorMessage, setErrorMessage] = useState<string>();
+
+  // Timer & latency tracking
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const sessionStartTimeRef = useRef<number>(Date.now());
+  const questionStartTimeRef = useRef<number>(Date.now());
+  const latenciesRef = useRef<Record<string, number>>({});
+
+  useEffect(() => {
+    sessionStartTimeRef.current = Date.now();
+    questionStartTimeRef.current = Date.now();
+    latenciesRef.current = {};
+    const timer = setInterval(() => {
+      setElapsedSeconds((prev) => prev + 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -93,6 +118,12 @@ export function McqPage({
     if (selectedAnswerIndex === undefined || !lesson || !currentQuestion) {
       return;
     }
+
+    // Record latency for this question
+    const timeSpent = Date.now() - questionStartTimeRef.current;
+    latenciesRef.current[currentQuestion.questionId] = timeSpent;
+    questionStartTimeRef.current = Date.now();
+
     const nextAnswers = { ...answers, [currentQuestion.questionId]: selectedAnswerIndex };
     setAnswers(nextAnswers);
 
@@ -103,6 +134,8 @@ export function McqPage({
     }
 
     setIsSubmitting(true);
+    const totalDurationSeconds = Math.max(1, Math.round((Date.now() - sessionStartTimeRef.current) / 1000));
+
     try {
       const results = await Promise.all(
         lesson.lessonQuestions.map(async (question) => {
@@ -115,19 +148,53 @@ export function McqPage({
               question.answerOptions.map((option) => option.answerText),
               vocabularies,
             );
-          return { ...result, vocabularyId: fallbackVocabularyId };
+          const responseTimeMs = latenciesRef.current[question.questionId];
+          const matchedVocab = fallbackVocabularyId ? vocabById[fallbackVocabularyId] : undefined;
+          return {
+            ...result,
+            vocabularyId: fallbackVocabularyId,
+            responseTimeMs,
+            word: matchedVocab?.word,
+            translation: matchedVocab?.meaning,
+          };
         }),
       );
 
-      void recordQuizReviews(userId, results, accessToken).catch((error: unknown) => {
-        console.warn("Không thể lưu thống kê Analytics.", error);
+      const correctCount = results.filter(({ correct }) => correct).length;
+
+      // Submit batch study session and reviews to Analytics
+      const batchReviews = results
+        .map((r) => ({
+          cardId: r.masteryCandidateVocabularyId || r.vocabularyId || "",
+          deckId: lessonId,
+          word: r.word || "",
+          translation: r.translation,
+          correct: r.correct,
+          responseTimeMs: r.responseTimeMs,
+        }))
+        .filter((r) => Boolean(r.cardId));
+
+      void submitBatchStudySession(
+        {
+          userId,
+          deckId: lessonId,
+          deckTitle: lesson.lessonTitle,
+          sessionType: "mcq",
+          totalCardsOrQuestions: lesson.lessonQuestions.length,
+          correctCount,
+          durationSeconds: totalDurationSeconds,
+          reviews: batchReviews,
+        },
+        accessToken,
+      ).catch((error: unknown) => {
+        console.warn("Không thể lưu kết quả trắc nghiệm vào Analytics.", error);
       });
 
       onComplete(
-        results.filter(({ correct }) => correct).length,
+        correctCount,
         lesson.lessonQuestions.length,
-        reviewsRecorded,
-        reviewsSyncFailed > 0 ? reviewsSyncFailed : undefined,
+        results.length,
+        0,
       );
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Không thể chấm kết quả bài làm.");
@@ -141,16 +208,16 @@ export function McqPage({
       <AppSidebar account={account} activePage="mcq" onLogout={onLogout} onNavigate={onNavigate} />
 
       <main className="mcq-page">
-        <header className="mcq-header-bar" style={{ marginBottom: "14px" }}>
+        <header className="mcq-header-bar" style={{ marginBottom: "14px", flexWrap: "wrap", gap: "10px" }}>
           <button
             className="manage-secondary-button interactive-element"
-            onClick={() => onNavigate("lessons")}
+            onClick={() => onNavigate("flashcards")}
             type="button"
           >
             <ArrowLeftIcon2D size={14} /> Quay lại
           </button>
 
-          <div style={{ flex: 1, margin: "0 14px" }}>
+          <div style={{ flex: 1, margin: "0 14px", minWidth: "180px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11.5px", fontWeight: 700, marginBottom: "4px" }}>
               <span style={{ color: "var(--brand-primary)" }}>{(lesson?.lessonTitle ?? "BÀI HỌC").toUpperCase()}</span>
               <span>{progressPercent}%</span>
@@ -158,6 +225,25 @@ export function McqPage({
             <div style={{ height: "5px", background: "var(--border-glass-subtle)", borderRadius: "var(--radius-full)", overflow: "hidden" }}>
               <div style={{ height: "100%", width: `${progressPercent}%`, background: "linear-gradient(90deg, var(--brand-primary), #8b5cf6)", transition: "width 0.3s ease" }} />
             </div>
+          </div>
+
+          {/* Live Timer */}
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "5px",
+              padding: "4px 10px",
+              background: "var(--bg-glass-input)",
+              borderRadius: "8px",
+              border: "1px solid var(--border-glass-subtle)",
+              fontSize: "12px",
+              fontWeight: 700,
+              color: "var(--brand-primary)",
+            }}
+          >
+            <ClockIcon2D size={13} />
+            <span>{formatTime(elapsedSeconds)}</span>
           </div>
 
           <span style={{ fontSize: "12.5px", fontWeight: 700, color: "var(--text-muted)" }}>
@@ -174,46 +260,35 @@ export function McqPage({
               <p className="eyebrow">CHỌN ĐÁP ÁN ĐÚNG</p>
               <h1 id="mcq-question" style={{ fontSize: "20px", margin: "6px 0 0" }}>{currentQuestion.questionText}</h1>
 
-              <div className="answer-list">
-                {currentQuestion.answerOptions.map((answer, index) => {
-                  const isSelected = selectedAnswerIndex === index;
-
+              <div className="mcq-options-grid" style={{ marginTop: "16px" }}>
+                {currentQuestion.answerOptions.map((option, idx) => {
+                  const isSelected = selectedAnswerIndex === idx;
                   return (
                     <button
-                      aria-pressed={isSelected}
-                      className={`answer-option interactive-element${isSelected ? " answer-option-selected" : ""}`}
-                      key={answer.answerId}
-                      onClick={() => setSelectedAnswerIndex(index)}
+                      key={option.answerId}
+                      className={`mcq-option-button interactive-element ${isSelected ? "selected" : ""}`}
+                      onClick={() => setSelectedAnswerIndex(idx)}
                       type="button"
                     >
-                      <span className="answer-letter">
-                        {String.fromCharCode(65 + index)}
-                      </span>
-                      <span>{answer.answerText}</span>
+                      <span className="mcq-option-number">{String.fromCharCode(65 + idx)}</span>
+                      <span className="mcq-option-text">{option.answerText}</span>
                     </button>
                   );
                 })}
               </div>
             </section>
 
-            <button
-              className="login-primary-button interactive-element"
-              disabled={selectedAnswerIndex === undefined || isSubmitting}
-              onClick={() => void handleNextQuestion()}
-              style={{ width: "100%", minHeight: "44px", fontSize: "14px" }}
-              type="button"
-            >
-              {isSubmitting ? (
-                "Đang nộp bài..."
-              ) : isLastQuestion ? (
-                <span>Xem kết quả bài làm</span>
-              ) : (
-                <>
-                  <span>Câu tiếp theo</span>
-                  <ArrowRightIcon2D size={14} />
-                </>
-              )}
-            </button>
+            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <button
+                className="login-primary-button interactive-element"
+                disabled={selectedAnswerIndex === undefined || isSubmitting}
+                onClick={() => void handleNextQuestion()}
+                type="button"
+              >
+                <span>{isSubmitting ? "Đang nộp..." : isLastQuestion ? "Nộp bài" : "Câu tiếp theo"}</span>
+                <ArrowRightIcon2D size={16} />
+              </button>
+            </div>
           </div>
         ) : null}
       </main>

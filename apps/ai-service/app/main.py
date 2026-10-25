@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .api import router
+from .auth import authenticate
 from .config import get_settings
 from .db import close_database, initialize_database
 from .exceptions import register_exception_handlers
@@ -19,6 +20,7 @@ async def lifespan(_app: FastAPI):
 
 
 app = FastAPI(title=settings.app_name, lifespan=lifespan)
+app.middleware("http")(authenticate)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.frontend_origins,

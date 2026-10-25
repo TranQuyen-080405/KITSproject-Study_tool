@@ -1,5 +1,10 @@
 # API Gateway
 
+All business APIs require a User Service bearer access token. Configure `USER_SERVICE_URL`
+(local default `http://localhost:8001`; Docker `http://user-service:8000`). Health remains public.
+See [service authentication](../../docs/service-auth.md) for account isolation and local setup.
+
+
 The API Gateway is the public HTTP entry point for web and mobile clients. In V1 it forwards `/api/v1/*` requests to the existing backend services without owning application data or business logic.
 
 ## Local URL

@@ -22,12 +22,12 @@ describe("analytics API", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    const stats = await fetchAnalyticsDashboard(42, "token-1");
+    const stats = await fetchAnalyticsDashboard("token-1");
 
     expect(stats.accuracy).toBe(75);
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [path, options] = fetchMock.mock.calls[0] as [string, RequestInit];
-    expect(path).toBe("/api/v1/analytics/dashboard?userId=42");
+    expect(path).toBe("/api/v1/analytics/dashboard");
     expect(new Headers(options.headers).get("authorization")).toBe("Bearer token-1");
   });
 

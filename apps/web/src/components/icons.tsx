@@ -123,6 +123,17 @@ export function PlusIcon2D({ size = 16, color = "currentColor", ...props }: Icon
   );
 }
 
+export function CloseIcon2D({ size = 16, color = "currentColor", ...props }: IconProps) {
+  return (
+    <svg fill="none" height={size} stroke={color} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" width={size} {...props}>
+      <line x1="18" x2="6" y1="6" y2="18" />
+      <line x1="6" x2="18" y1="6" y2="18" />
+    </svg>
+  );
+}
+
+export const XIcon2D = CloseIcon2D;
+
 export function TrashIcon2D({ size = 16, color = "currentColor", ...props }: IconProps) {
   return (
     <svg fill="none" height={size} stroke={color} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" width={size} {...props}>
@@ -255,4 +266,91 @@ export function SendIcon2D({ size = 16, color = "currentColor", ...props }: Icon
     </svg>
   );
 }
+
+export function StarIcon2D({ size = 16, color = "currentColor", filled = false, ...props }: IconProps & { filled?: boolean }) {
+  return (
+    <svg fill={filled ? color : "none"} height={size} stroke={color} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" width={size} {...props}>
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+    </svg>
+  );
+}
+
+export function LayersIcon2D({ size = 16, color = "currentColor", ...props }: IconProps) {
+  return (
+    <svg fill="none" height={size} stroke={color} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" width={size} {...props}>
+      <polygon points="12 2 2 7 12 12 22 7 12 2" />
+      <polyline points="2 17 12 22 22 17" />
+      <polyline points="2 12 12 17 22 12" />
+    </svg>
+  );
+}
+
+export function PlayIcon2D({ size = 16, color = "currentColor", ...props }: IconProps) {
+  return (
+    <svg fill={color} height={size} stroke={color} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" width={size} {...props}>
+      <polygon points="5 3 19 12 5 21 5 3" />
+    </svg>
+  );
+}
+
+export function ShuffleIcon2D({ size = 16, color = "currentColor", ...props }: IconProps) {
+  return (
+    <svg fill="none" height={size} stroke={color} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" width={size} {...props}>
+      <polyline points="16 3 21 3 21 8" />
+      <line x1="4" y1="20" x2="21" y2="3" />
+      <polyline points="21 16 21 21 16 21" />
+      <line x1="15" y1="15" x2="21" y2="21" />
+      <line x1="4" y1="4" x2="9" y2="9" />
+    </svg>
+  );
+}
+
+export function RotateIcon2D({ size = 16, color = "currentColor", ...props }: IconProps) {
+  return (
+    <svg fill="none" height={size} stroke={color} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" width={size} {...props}>
+      <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+    </svg>
+  );
+}
+
+export function FlameIcon2D({ size = 16, color = "currentColor", ...props }: IconProps) {
+  return (
+    <svg fill="none" height={size} stroke={color} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" width={size} {...props}>
+      <path d="M8.5 14.5A2.5 2.5 0 0 0 11 17c1.38 0 2.5-1.12 2.5-2.5 0-1.63-1.5-3.5-1.5-3.5s-1.5 1.87-1.5 3.5z" />
+      <path d="M12 2c-4 4-6 7.5-6 11a6 6 0 0 0 12 0c0-3.5-2-7-6-11z" />
+    </svg>
+  );
+}
+
+export function ZapIcon2D({ size = 16, color = "currentColor", ...props }: IconProps) {
+  return (
+    <svg fill="none" height={size} stroke={color} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" width={size} {...props}>
+      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+    </svg>
+  );
+}
+
+export function UploadIcon2D({ size = 16, color = "currentColor", ...props }: IconProps) {
+  return (
+    <svg fill="none" height={size} stroke={color} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" width={size} {...props}>
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <polyline points="17 8 12 3 7 8" />
+      <line x1="12" y1="3" x2="12" y2="15" />
+    </svg>
+  );
+}
+
+export function HistoryIcon2D({ size = 16, color = "currentColor", ...props }: IconProps) {
+  return (
+    <svg fill="none" height={size} stroke={color} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" width={size} {...props}>
+      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+      <path d="M3 3v5h5" />
+      <path d="M12 7v5l4 2" />
+    </svg>
+  );
+}
+
+
+
+
 

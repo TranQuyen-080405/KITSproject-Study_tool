@@ -1,9 +1,9 @@
 const API_URL = import.meta.env.VITE_API_URL || "";
 
-export async function api(path, userId, options = {}) {
-  const resolvedUserId = String(userId ?? "").trim();
-  if (!resolvedUserId) {
-    throw new Error("x-user-id is required");
+export async function api(path, accessToken, options = {}) {
+  const resolvedToken = String(accessToken ?? "").trim();
+  if (!resolvedToken && path !== "/health") {
+    throw new Error("Access token is required");
   }
 
   let response;
@@ -11,7 +11,7 @@ export async function api(path, userId, options = {}) {
     response = await fetch(`${API_URL}${path}`, {
       ...options,
       headers: {
-        "x-user-id": resolvedUserId,
+        Authorization: `Bearer ${resolvedToken}`,
         ...(options.body ? { "Content-Type": "application/json" } : {}),
         ...options.headers,
       },
@@ -43,4 +43,4 @@ export async function api(path, userId, options = {}) {
   return response.status === 204 ? null : response.json();
 }
 
-export const health = (userId) => api("/health", userId);
+export const health = (accessToken) => api("/health", accessToken);

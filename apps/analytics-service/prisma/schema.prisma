@@ -1,11 +1,63 @@
-﻿// This Prisma schema will define the database owned by the Analytics Service.
+// This Prisma schema defines the database owned by the Analytics Service.
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("ANALYTICS_DATABASE_URL")
 }
 
-// TODO: Add only models owned by this service.
+model UserReview {
+  id                    String    @id @default(uuid())
+  userId                String
+  cardId                String
+  deckId                String?
+  word                  String
+  front                 String
+  translation           String?
+  back                  String?
+  status                String    @default("new") // "new" | "learning" | "mastered"
+  correctCount          Int       @default(0)
+  incorrectCount        Int       @default(0)
+  correctStreak         Int       @default(0)
+  totalReviews          Int       @default(0)
+  intervalDays          Int       @default(0)
+  easeFactor            Float     @default(2.5)
+  nextReviewAt          DateTime  @default(now())
+  lastReviewedAt        DateTime  @default(now())
+  lastResponseTimeMs    Int?
+  averageResponseTimeMs Int?
+
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@unique([userId, cardId])
+  @@index([userId, nextReviewAt])
+  @@index([userId, deckId])
+}
+
+model StudySession {
+  id                    String    @id @default(uuid())
+  userId                String
+  deckId                String?
+  deckTitle             String?
+  sessionType           String    @default("deck_study") // "deck_study" | "daily_review"
+  totalCardsOrQuestions Int
+  correctCount          Int
+  scorePercentage       Int
+  durationSeconds       Int
+  averageResponseTimeMs Int?
+  completedAt           DateTime  @default(now())
+
+  @@index([userId, completedAt])
+  @@index([userId, deckId])
+}
+
+model UserStreak {
+  userId          String   @id
+  currentStreak   Int      @default(0)
+  longestStreak   Int      @default(0)
+  lastStudiedDate String?  // "YYYY-MM-DD"
+  updatedAt       DateTime @updatedAt
+}

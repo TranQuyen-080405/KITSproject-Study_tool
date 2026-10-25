@@ -40,6 +40,9 @@ corepack pnpm run:mobile
 `run:user` / `run:ai` cần venv + dependency Python đã cài; Postgres tương ứng đang chạy.
 ## Web + auth stack (Docker)
 
+All business services require bearer authentication. Web sends the signed-in session automatically;
+see [service auth](docs/service-auth.md). AI demo and replay/benchmark scripts also require an access token.
+
 ```bash
 docker compose up -d --build web
 ```
@@ -101,8 +104,18 @@ docker compose up -d --build analytics-service
 | http://localhost:3003/api/v1/analytics/dashboard?userId=demo | Dashboard trực tiếp |
 | http://localhost:3000/api/v1/analytics/dashboard?userId=demo | Qua API Gateway |
 
-Postgres analytics: `localhost:5437`. Hiện service lưu review vào volume JSON; DB/RabbitMQ đã gắn sẵn cho bước Prisma/event sau.
+Analytics lưu reviews, sessions và streaks trong PostgreSQL qua Prisma. Docker công khai DB tại `localhost:5437`. Xem [hướng dẫn migration và nhập JSON cũ](apps/analytics-service/README.md). RabbitMQ chưa có consumer.
 
+
+## Android app: manual study
+
+The Android client now supports User Service account flows, manual decks/cards/questions,
+and flashcard/question practice across one deck or the whole collection.
+Its standalone backend uses User + Content only.
+
+See [the Windows emulator setup and testing guide](apps/mobile/README.md).
+Start with `corepack pnpm mobile:check`, then `corepack pnpm mobile:backend`
+and `corepack pnpm mobile:android`. Use `corepack pnpm mobile:web` for a laptop browser preview.
 
 # Korean Learning App
 

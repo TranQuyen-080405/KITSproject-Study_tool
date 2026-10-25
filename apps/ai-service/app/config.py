@@ -7,6 +7,7 @@ from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    user_service_url: str = "http://localhost:8001"
     app_name: str = "ai-service"
     host: str = "0.0.0.0"
     port: int = 3000
@@ -16,6 +17,8 @@ class Settings(BaseSettings):
     llm_api_key: str = ""
     llm_base_url: str | None = None
     llm_temperature: float = 0.2
+    llm_timeout_seconds: float = Field(default=30, gt=0, le=120)
+    llm_total_timeout_seconds: float = Field(default=45, gt=0, le=180)
     max_context_messages: int = 12
     max_context_tokens: int = 6000
     frontend_origins: Annotated[list[str], NoDecode] = Field(

@@ -8,8 +8,9 @@ const options = ["xin chào", "cảm ơn", "tạm biệt", "xin lỗi"];
 
 async function cleanDatabase(): Promise<void> {
   await prisma.question.deleteMany();
-  await prisma.vocabulary.deleteMany();
-  await prisma.lesson.deleteMany();
+  await prisma.card.deleteMany();
+  await prisma.flashcard.deleteMany();
+  await prisma.folder.deleteMany();
 }
 
 integration("Content PostgreSQL integrity", () => {
@@ -19,97 +20,97 @@ integration("Content PostgreSQL integrity", () => {
     await prisma.$disconnect();
   });
 
-  it("rejects cross-lesson and missing target vocabulary IDs", async () => {
-    const lessonA = await prisma.lesson.create({
-      data: { name: "Lesson A", description: "A" },
+  it("rejects cross-deck and missing target card IDs", async () => {
+    const deckA = await prisma.flashcard.create({
+      data: { title: "Deck A", description: "A" },
     });
-    const lessonB = await prisma.lesson.create({
-      data: { name: "Lesson B", description: "B" },
+    const deckB = await prisma.flashcard.create({
+      data: { title: "Deck B", description: "B" },
     });
-    const vocabularyB = await prisma.vocabulary.create({
+    const cardB = await prisma.card.create({
       data: {
-        lessonId: lessonB.id,
-        word: "감사합니다",
-        meaning: "cảm ơn",
+        flashcardId: deckB.id,
+        front: "감사합니다",
+        back: "cảm ơn",
       },
     });
 
     await expect(
-      contentRepository.createQuestion(lessonA.id, {
-        prompt: "Cross lesson",
-        vocabularyId: vocabularyB.id,
+      contentRepository.createQuestion(deckA.id, {
+        prompt: "Cross deck",
+        cardId: cardB.id,
         options,
         correctOptionIndex: 0,
       }),
-    ).rejects.toEqual(new AppError("vocabularyId must belong to this lesson", 400));
+    ).rejects.toEqual(new AppError("cardId must belong to this flashcard deck", 400));
 
     await expect(
-      contentRepository.createQuestion(lessonA.id, {
-        prompt: "Missing vocabulary",
-        vocabularyId: "00000000-0000-0000-0000-000000000000",
+      contentRepository.createQuestion(deckA.id, {
+        prompt: "Missing card",
+        cardId: "00000000-0000-0000-0000-000000000000",
         options,
         correctOptionIndex: 0,
       }),
-    ).rejects.toEqual(new AppError("Target vocabulary not found", 404));
+    ).rejects.toEqual(new AppError("Target card not found", 404));
   });
 
-  it("supports general questions and SET NULL when vocabulary is deleted", async () => {
-    const lesson = await prisma.lesson.create({
-      data: { name: "Lesson", description: "Description" },
+  it("supports general questions and SET NULL when card is deleted", async () => {
+    const deck = await prisma.flashcard.create({
+      data: { title: "Deck", description: "Description" },
     });
-    const vocabulary = await prisma.vocabulary.create({
-      data: { lessonId: lesson.id, word: "안녕하세요", meaning: "xin chào" },
+    const card = await prisma.card.create({
+      data: { flashcardId: deck.id, front: "안녕하세요", back: "xin chào" },
     });
-    const targeted = await contentRepository.createQuestion(lesson.id, {
+    const targeted = await contentRepository.createQuestion(deck.id, {
       prompt: "Targeted",
-      vocabularyId: vocabulary.id,
+      cardId: card.id,
       options,
       correctOptionIndex: 0,
     });
-    const general = await contentRepository.createQuestion(lesson.id, {
+    const general = await contentRepository.createQuestion(deck.id, {
       prompt: "General",
-      vocabularyId: null,
+      cardId: null,
       options,
       correctOptionIndex: 0,
     });
 
-    expect(general.vocabularyId).toBeNull();
-    await prisma.vocabulary.delete({ where: { id: vocabulary.id } });
+    expect(general.cardId).toBeNull();
+    await prisma.card.delete({ where: { id: card.id } });
     expect(
-      (await prisma.question.findUniqueOrThrow({ where: { id: targeted.id } })).vocabularyId,
+      (await prisma.question.findUniqueOrThrow({ where: { id: targeted.id } })).cardId,
     ).toBeNull();
   });
 
-  it("cascades lesson deletion to vocabulary and questions", async () => {
-    const lesson = await prisma.lesson.create({
-      data: { name: "Cascade", description: "Cascade test" },
+  it("cascades deck deletion to cards and questions", async () => {
+    const deck = await prisma.flashcard.create({
+      data: { title: "Cascade", description: "Cascade test" },
     });
-    const vocabulary = await prisma.vocabulary.create({
-      data: { lessonId: lesson.id, word: "안녕", meaning: "chào" },
+    const card = await prisma.card.create({
+      data: { flashcardId: deck.id, front: "안녕", back: "chào" },
     });
-    await contentRepository.createQuestion(lesson.id, {
+    await contentRepository.createQuestion(deck.id, {
       prompt: "Cascade question",
-      vocabularyId: vocabulary.id,
+      cardId: card.id,
       options,
       correctOptionIndex: 0,
     });
 
-    await prisma.lesson.delete({ where: { id: lesson.id } });
+    await prisma.flashcard.delete({ where: { id: deck.id } });
 
-    expect(await prisma.vocabulary.count({ where: { lessonId: lesson.id } })).toBe(0);
-    expect(await prisma.question.count({ where: { lessonId: lesson.id } })).toBe(0);
+    expect(await prisma.card.count({ where: { flashcardId: deck.id } })).toBe(0);
+    expect(await prisma.question.count({ where: { flashcardId: deck.id } })).toBe(0);
   });
 
   it("rolls back every write when a transaction fails", async () => {
     await expect(
       prisma.$transaction(async (transaction) => {
-        await transaction.lesson.create({
-          data: { name: "Rollback", description: "Must not persist" },
+        await transaction.flashcard.create({
+          data: { title: "Rollback", description: "Must not persist" },
         });
         throw new Error("force rollback");
       }),
     ).rejects.toThrow("force rollback");
 
-    expect(await prisma.lesson.count({ where: { name: "Rollback" } })).toBe(0);
+    expect(await prisma.flashcard.count({ where: { title: "Rollback" } })).toBe(0);
   });
 });

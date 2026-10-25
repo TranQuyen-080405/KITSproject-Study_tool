@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime, timedelta
 
-from fastapi import BackgroundTasks, Cookie, Depends, FastAPI, HTTPException, Response
+from fastapi import BackgroundTasks, Cookie, Depends, FastAPI, Header, HTTPException, Response
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -48,6 +48,7 @@ def public_user(user: User) -> dict:
         "email": user.email,
         "displayName": user.display_name,
         "emailVerified": user.email_verified_at is not None,
+        "role": user.role.value,
     }
 
 
@@ -113,12 +114,15 @@ def current_verification_token(
     )
 
 
-def token_response(user: User) -> dict:
-    return {
+def token_response(user: User, refresh_token: str | None = None) -> dict:
+    result = {
         "accessToken": create_access_token(user),
         "expiresIn": settings.access_token_minutes * 60,
         "user": public_user(user),
     }
+    if refresh_token is not None:
+        result["refreshToken"] = refresh_token
+    return result
 
 
 def set_refresh_cookie(response: Response, token: str) -> None:
@@ -154,6 +158,8 @@ app.add_middleware(
         "http://localhost:8080",
         "http://127.0.0.1:5173",
         "http://127.0.0.1:8080",
+        "http://localhost:8081",
+        "http://127.0.0.1:8081",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -248,7 +254,7 @@ def verify_email(payload: VerificationCodeRequest, db: Session = Depends(get_db)
 
 
 @app.post("/api/v1/auth/login", tags=["Auth"])
-def login(payload: LoginRequest, response: Response, db: Session = Depends(get_db)) -> dict:
+def login(payload: LoginRequest, response: Response, db: Session = Depends(get_db), x_client_platform: str | None = Header(default=None)) -> dict:
     user = db.scalar(select(User).where(User.username == payload.username.strip().lower()))
     if not user or not user.password_hash or not verify_password(payload.password, user.password_hash):
         raise HTTPException(401, detail={"code": "INVALID_CREDENTIALS", "message": "Tên tài khoản hoặc mật khẩu không đúng"})
@@ -260,11 +266,11 @@ def login(payload: LoginRequest, response: Response, db: Session = Depends(get_d
     refresh_token = issue_refresh_token(user)
     db.commit()
     set_refresh_cookie(response, refresh_token)
-    return token_response(user)
+    return token_response(user, refresh_token if x_client_platform == "android" else None)
 
 
 @app.post("/api/v1/auth/google", tags=["Auth"])
-def google_login(payload: GoogleRequest, response: Response, db: Session = Depends(get_db)) -> dict:
+def google_login(payload: GoogleRequest, response: Response, db: Session = Depends(get_db), x_client_platform: str | None = Header(default=None)) -> dict:
     if not settings.google_client_id:
         raise HTTPException(503, detail={"code": "GOOGLE_AUTH_NOT_CONFIGURED", "message": "Google login chưa được cấu hình"})
     try:
@@ -327,7 +333,7 @@ def google_login(payload: GoogleRequest, response: Response, db: Session = Depen
     refresh_token = issue_refresh_token(user)
     db.commit()
     set_refresh_cookie(response, refresh_token)
-    return token_response(user)
+    return token_response(user, refresh_token if x_client_platform == "android" else None)
 
 
 @app.post("/api/v1/auth/refresh", tags=["Auth"])
@@ -336,8 +342,9 @@ def refresh(
     response: Response,
     refresh_token: str | None = Cookie(default=None),
     db: Session = Depends(get_db),
+    x_client_platform: str | None = Header(default=None),
 ) -> dict:
-    raw_token = refresh_token or (payload.refreshToken if payload else None)
+    raw_token = (payload.refreshToken if payload else None) or refresh_token
     if not raw_token:
         raise HTTPException(401, detail={"code": "INVALID_TOKEN", "message": "Thiếu refresh token"})
     user = db.scalar(select(User).where(User.refresh_token_hash == token_hash(raw_token)))
@@ -352,7 +359,7 @@ def refresh(
     new_refresh_token = issue_refresh_token(user)
     db.commit()
     set_refresh_cookie(response, new_refresh_token)
-    return token_response(user)
+    return token_response(user, new_refresh_token if x_client_platform == "android" else None)
 
 
 @app.post("/api/v1/auth/logout", status_code=204, tags=["Auth"])
@@ -362,7 +369,7 @@ def logout(
     refresh_token: str | None = Cookie(default=None),
     db: Session = Depends(get_db),
 ) -> Response:
-    raw_token = refresh_token or (payload.refreshToken if payload else None)
+    raw_token = (payload.refreshToken if payload else None) or refresh_token
     if raw_token:
         user = db.scalar(select(User).where(User.refresh_token_hash == token_hash(raw_token)))
         if user:

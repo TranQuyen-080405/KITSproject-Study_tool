@@ -7,42 +7,82 @@ datasource db {
   provider = "postgresql"
 }
 
-model Lesson {
-  id          String       @id @default(uuid())
+model Folder {
+  id          String      @id @default(uuid())
   name        String
-  description String
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  vocabulary  Vocabulary[]
-  questions   Question[]
+  description String?
+  userId      String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  flashcards  Flashcard[]
+
+  @@index([userId])
 }
 
-model Vocabulary {
-  id        String     @id @default(uuid())
-  lessonId  String
-  word      String
-  meaning   String
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  lesson    Lesson     @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-  questions Question[]
+model Flashcard {
+  id          String     @id @default(uuid())
+  folderId    String?
+  title       String
+  description String?
+  userId      String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  folder      Folder?    @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  cards       Card[]
+  questions   Question[]
+  testSessions DeckTestSession[]
 
-  @@unique([lessonId, word])
-  @@index([lessonId])
+  @@index([folderId])
+  @@index([userId])
+}
+
+model Card {
+  id          String     @id @default(uuid())
+  flashcardId String
+  front       String
+  back        String
+  hint        String?
+  orderIndex  Int        @default(0)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  flashcard   Flashcard  @relation(fields: [flashcardId], references: [id], onDelete: Cascade)
+  questions   Question[]
+
+  @@index([flashcardId])
 }
 
 model Question {
-  id                 String      @id @default(uuid())
-  lessonId           String
-  vocabularyId       String?
+  id                 String     @id @default(uuid())
+  flashcardId        String
+  cardId             String?
   prompt             String
   options            Json
   correctOptionIndex Int
-  createdAt          DateTime    @default(now())
-  updatedAt          DateTime    @updatedAt
-  lesson             Lesson      @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-  vocabulary         Vocabulary? @relation(fields: [vocabularyId], references: [id], onDelete: SetNull)
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+  flashcard          Flashcard  @relation(fields: [flashcardId], references: [id], onDelete: Cascade)
+  card               Card?      @relation(fields: [cardId], references: [id], onDelete: SetNull)
 
-  @@index([lessonId])
-  @@index([vocabularyId])
+  @@index([flashcardId])
+  @@index([cardId])
+}
+
+// Immutable question snapshots keep old attempts stable when cards change.
+model DeckTestSession {
+  id              String    @id @default(uuid())
+  flashcardId     String
+  userId          String
+  sourceSessionId String?
+  deckTitle       String
+  questions       Json
+  answers         Json
+  correctCount    Int       @default(0)
+  totalQuestions  Int
+  scorePercentage Int       @default(0)
+  version         Int       @default(0)
+  createdAt       DateTime  @default(now())
+  completedAt     DateTime?
+  flashcard       Flashcard @relation(fields: [flashcardId], references: [id], onDelete: Cascade)
+
+  @@index([flashcardId, userId, createdAt])
 }

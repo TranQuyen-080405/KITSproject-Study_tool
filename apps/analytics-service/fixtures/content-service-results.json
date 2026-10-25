@@ -3,37 +3,42 @@
   "events": [
     {
       "userId": "content-service-fixture-user",
-      "vocabularyId": "weather-sunny",
-      "word": "맑음",
-      "translation": "sunny / clear weather",
+      "cardId": "card-weather-sunny",
+      "vocabularyId": "card-weather-sunny",
+      "front": "맑음",
+      "back": "sunny / clear weather",
       "correct": true
     },
     {
       "userId": "content-service-fixture-user",
-      "vocabularyId": "weather-sunny",
-      "word": "맑음",
-      "translation": "sunny / clear weather",
+      "cardId": "card-weather-sunny",
+      "vocabularyId": "card-weather-sunny",
+      "front": "맑음",
+      "back": "sunny / clear weather",
       "correct": true
     },
     {
       "userId": "content-service-fixture-user",
-      "vocabularyId": "weather-sunny",
-      "word": "맑음",
-      "translation": "sunny / clear weather",
+      "cardId": "card-weather-sunny",
+      "vocabularyId": "card-weather-sunny",
+      "front": "맑음",
+      "back": "sunny / clear weather",
       "correct": true
     },
     {
       "userId": "content-service-fixture-user",
-      "vocabularyId": "weather-rain",
-      "word": "비",
-      "translation": "rain",
+      "cardId": "card-weather-rain",
+      "vocabularyId": "card-weather-rain",
+      "front": "비",
+      "back": "rain",
       "correct": false
     },
     {
       "userId": "content-service-fixture-user",
-      "vocabularyId": "weather-cloudy",
-      "word": "흐림",
-      "translation": "cloudy",
+      "cardId": "card-weather-cloudy",
+      "vocabularyId": "card-weather-cloudy",
+      "front": "흐림",
+      "back": "cloudy",
       "correct": true
     }
   ]

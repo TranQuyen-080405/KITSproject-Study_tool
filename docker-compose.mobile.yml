@@ -1,0 +1,74 @@
+# Standalone local stack. Does not include AI, Analytics, RabbitMQ, or the web app.
+name: haru-mobile
+services:
+  api-gateway:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile.service
+    command: ["pnpm", "--filter", "@korean-learning/api-gateway", "dev"]
+    environment:
+      PORT: "3000"
+      USER_SERVICE_URL: http://user-service:8000
+      CONTENT_SERVICE_URL: http://content-service:3001
+      ANALYTICS_SERVICE_URL: http://127.0.0.1:1
+      AI_SERVICE_URL: http://127.0.0.1:1
+      MOBILE_ONLY: "true"
+    ports: ["3000:3000"]
+    depends_on: [user-service, content-service]
+  user-service:
+    build:
+      context: .
+      dockerfile: apps/user-service/Dockerfile
+    environment:
+      USER_DATABASE_URL: postgresql+psycopg://postgres:postgres@user-postgres:5432/user_service
+      JWT_SECRET: ${USER_JWT_SECRET:-mobile-local-development-secret}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      ADMIN_EMAILS: ${USER_ADMIN_EMAILS:-admin@example.com}
+      FRONTEND_URL: http://localhost:8081
+      SMTP_HOST: mailpit
+      SMTP_PORT: "1025"
+      SMTP_FROM: haru@local.test
+      SMTP_USE_TLS: "false"
+      SECURE_COOKIES: "false"
+      SEED_TEST_USER: "true"
+    depends_on:
+      user-postgres: { condition: service_healthy }
+      mailpit: { condition: service_started }
+  content-service:
+    build:
+      context: .
+      dockerfile: apps/content-service/Dockerfile
+    # Fresh dedicated mobile DB only; avoid the general db:deploy data-loss flag.
+    command: ["sh", "-c", "pnpm --filter @korean-learning/content-service exec prisma db push --config prisma.config.ts && exec pnpm --filter @korean-learning/content-service start"]
+    environment:
+      CONTENT_DATABASE_URL: postgresql://postgres:postgres@content-postgres:5432/content_service
+      PORT: "3001"
+      CONTENT_REQUIRE_AUTH: "true"
+      USER_SERVICE_URL: http://user-service:8000
+    depends_on:
+      content-postgres: { condition: service_healthy }
+      user-service: { condition: service_started }
+  user-postgres:
+    image: postgres:17-alpine
+    environment: { POSTGRES_DB: user_service, POSTGRES_USER: postgres, POSTGRES_PASSWORD: postgres }
+    volumes: ["mobile-user-data:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d user_service"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+  content-postgres:
+    image: postgres:17-alpine
+    environment: { POSTGRES_DB: content_service, POSTGRES_USER: postgres, POSTGRES_PASSWORD: postgres }
+    volumes: ["mobile-content-data:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d content_service"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+  mailpit:
+    image: axllent/mailpit:v1.27
+    ports: ["127.0.0.1:8025:8025"]
+volumes:
+  mobile-user-data:
+  mobile-content-data:

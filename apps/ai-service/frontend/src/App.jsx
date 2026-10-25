@@ -83,7 +83,7 @@ function matchPrompts(query, bank, limit = 5) {
 }
 
 export default function App() {
-  const [userId, setUserId] = useState("tester");
+  const [accessToken, setAccessToken] = useState("");
   const [conversationId, setConversationId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -103,14 +103,14 @@ export default function App() {
   }, [messages, loading]);
 
   useEffect(() => {
-    health(userId)
+    health(accessToken)
       .then((result) => setBackendOk(result.status === "ok"))
       .catch(() => setBackendOk(false));
-  }, [userId]);
+  }, [accessToken]);
 
   async function ensureConversation() {
     if (conversationId) return conversationId;
-    const created = await api("/conversations", userId, {
+    const created = await api("/conversations", accessToken, {
       method: "POST",
       body: JSON.stringify({ title: `Chat ${new Date().toLocaleString("vi-VN")}` }),
     });
@@ -119,7 +119,7 @@ export default function App() {
   }
 
   async function refreshMessages(id) {
-    const detail = await api(`/conversations/${id}`, userId);
+    const detail = await api(`/conversations/${id}`, accessToken);
     setMessages(detail.messages || []);
   }
 
@@ -150,7 +150,7 @@ export default function App() {
 
     try {
       const id = await ensureConversation();
-      const result = await api(`/conversations/${id}/messages`, userId, {
+      const result = await api(`/conversations/${id}/messages`, accessToken, {
         method: "POST",
         body: JSON.stringify({ content }),
       });
@@ -197,11 +197,12 @@ export default function App() {
             </span>
             {modelInfo ? <span className="pill muted">{modelInfo}</span> : null}
             <label className="user-field">
-              <span>User</span>
+              <span>Access token</span>
               <input
-                value={userId}
-                onChange={(event) => setUserId(event.target.value)}
-                aria-label="User ID"
+                value={accessToken}
+                onChange={(event) => setAccessToken(event.target.value)}
+                aria-label="Access token"
+                type="password"
               />
             </label>
             <button className="btn-quiet" onClick={startNewChat} type="button">

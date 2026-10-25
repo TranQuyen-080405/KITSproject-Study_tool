@@ -1,7 +1,7 @@
 import express from "express";
 import { Server } from "node:http";
 import request from "supertest";
-import { afterAll, beforeAll, describe, expect, test } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test, vi } from "vitest";
 import { createApp } from "../src/app.js";
 import type { GatewayConfig, ServiceUrls } from "../src/config/index.js";
 
@@ -67,6 +67,10 @@ function buildConfig(overrides: Partial<ServiceUrls>): GatewayConfig {
 }
 
 describe("createApp", () => {
+  // Routing tests authenticate against an isolated identity-service response.
+  // Token rejection and upstream outages are exercised in auth.test.ts.
+  beforeEach(() => vi.stubGlobal("fetch", vi.fn().mockImplementation(async () => new Response(JSON.stringify({ id: 7 })))));
+  afterEach(() => vi.unstubAllGlobals());
   const upstreams = new Map<(typeof serviceNames)[number], MockUpstream>();
 
   beforeAll(async () => {
@@ -103,7 +107,7 @@ describe("createApp", () => {
     const upstream = upstreams.get(serviceName)!;
     const app = createApp(buildConfig({ [serviceName]: upstream.url }));
 
-    const response = await request(app).get(path);
+    const response = await request(app).get(path).set("Authorization", "Bearer test-token");
 
     expect(response.status).toBe(200);
     expect(upstream.calls.at(-1)?.path).toBe(path);
@@ -126,7 +130,7 @@ describe("createApp", () => {
     const upstream = upstreams.get("content")!;
     const app = createApp(buildConfig({ content: upstream.url }));
 
-    const response = await request(app).get("/api/v1/content/search?q=hangul&page=2");
+    const response = await request(app).get("/api/v1/content/search?q=hangul&page=2").set("Authorization", "Bearer test-token");
 
     expect(response.status).toBe(200);
     expect(upstream.calls.at(-1)?.path).toBe("/api/v1/content/search?q=hangul&page=2");
@@ -164,7 +168,7 @@ describe("createApp", () => {
     const app = createApp(buildConfig({ user: upstream.url }));
 
     try {
-      const response = await request(app).get("/api/v1/users/me");
+      const response = await request(app).get("/api/v1/users/me").set("Authorization", "Bearer test-token");
 
       expect(response.status).toBe(401);
       expect(response.body).toEqual({ ok: false, path: "/api/v1/users/me" });
@@ -176,7 +180,7 @@ describe("createApp", () => {
   test("unreachable upstream returns 503 JSON without crashing Gateway", async () => {
     const app = createApp(buildConfig({ analytics: "http://127.0.0.1:1" }));
 
-    const response = await request(app).get("/api/v1/analytics/dashboard");
+    const response = await request(app).get("/api/v1/analytics/dashboard").set("Authorization", "Bearer test-token");
 
     expect(response.status).toBe(503);
     expect(response.body).toEqual({ error: "Analytics service unavailable" });

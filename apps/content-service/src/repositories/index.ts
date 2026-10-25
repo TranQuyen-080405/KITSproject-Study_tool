@@ -1,47 +1,129 @@
-﻿import { prisma } from "../db.js";
+import { prisma } from "../db.js";
 import { AppError } from "../errors.js";
 import type { Prisma } from "../generated/prisma/client.js";
-import { assertTargetVocabulary } from "../validation.js";
+import { assertTargetCard } from "../validation.js";
 
-export interface CreateLessonRecord {
+export interface CreateFolderRecord {
   name: string;
-  description: string;
+  description?: string | null;
+  userId?: string | null;
 }
 
-export interface CreateVocabularyRecord {
-  word: string;
-  meaning: string;
+export interface UpdateFolderRecord {
+  name?: string;
+  description?: string | null;
+}
+
+export interface CreateFlashcardRecord {
+  title: string;
+  description?: string | null;
+  folderId?: string | null;
+  userId?: string | null;
+}
+
+export interface UpdateFlashcardRecord {
+  title?: string;
+  description?: string | null;
+  folderId?: string | null;
+}
+
+export interface CreateCardRecord {
+  front: string;
+  back: string;
+  hint?: string | null;
+  orderIndex?: number;
+}
+
+export interface UpdateCardRecord {
+  front?: string;
+  back?: string;
+  hint?: string | null;
+  orderIndex?: number;
 }
 
 export interface CreateQuestionRecord {
   prompt: string;
-  vocabularyId: string | null;
+  cardId?: string | null;
+  vocabularyId?: string | null;
   options: string[];
   correctOptionIndex: number;
 }
 
 export class ContentRepository {
-  createLesson(data: CreateLessonRecord) {
-    return prisma.lesson.create({ data });
+  // ===================== FOLDER =====================
+  createFolder(data: CreateFolderRecord) {
+    return prisma.folder.create({ data });
   }
 
-  listLessons() {
-    return prisma.lesson.findMany({
-      include: { _count: { select: { vocabulary: true, questions: true } } },
+  listFolders(userId?: string) {
+    return prisma.folder.findMany({
+      where: userId ? { userId } : undefined,
+      include: { _count: { select: { flashcards: true } } },
       orderBy: { createdAt: "desc" },
     });
   }
 
-  getLessonDetail(lessonId: string) {
-    return prisma.lesson.findUnique({
-      where: { id: lessonId },
+  getFolderDetail(folderId: string) {
+    return prisma.folder.findUnique({
+      where: { id: folderId },
       include: {
-        vocabulary: { orderBy: { createdAt: "asc" } },
+        flashcards: {
+          include: {
+            _count: { select: { cards: true, questions: true } },
+          },
+          orderBy: { createdAt: "desc" },
+        },
+      },
+    });
+  }
+
+  async updateFolder(folderId: string, data: UpdateFolderRecord) {
+    try {
+      return await prisma.folder.update({ where: { id: folderId }, data });
+    } catch {
+      return null;
+    }
+  }
+
+  async deleteFolder(folderId: string) {
+    try {
+      await prisma.folder.delete({ where: { id: folderId } });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  // ===================== FLASHCARD (DECK) =====================
+  async createFlashcard(data: CreateFlashcardRecord) {
+    if (data.folderId) {
+      await this.requireFolder(prisma, data.folderId);
+    }
+    return prisma.flashcard.create({ data });
+  }
+
+  listFlashcards(folderId?: string | null, userId?: string) {
+    return prisma.flashcard.findMany({
+      where: { ...(folderId !== undefined ? { folderId } : {}), ...(userId !== undefined ? { userId } : {}) },
+      include: {
+        folder: { select: { id: true, name: true } },
+        _count: { select: { cards: true, questions: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  getFlashcardDetail(flashcardId: string) {
+    return prisma.flashcard.findUnique({
+      where: { id: flashcardId },
+      include: {
+        folder: { select: { id: true, name: true } },
+        cards: { orderBy: { orderIndex: "asc" } },
         questions: {
           select: {
             id: true,
-            lessonId: true,
-            vocabularyId: true,
+            flashcardId: true,
+            cardId: true,
             prompt: true,
             options: true,
             createdAt: true,
@@ -49,61 +131,103 @@ export class ContentRepository {
           },
           orderBy: { createdAt: "asc" },
         },
+        _count: { select: { cards: true, questions: true } },
       },
     });
   }
 
-  async addVocabulary(lessonId: string, items: CreateVocabularyRecord[]) {
+  async updateFlashcard(flashcardId: string, data: UpdateFlashcardRecord) {
+    if (data.folderId) {
+      await this.requireFolder(prisma, data.folderId);
+    }
+    try {
+      return await prisma.flashcard.update({ where: { id: flashcardId }, data });
+    } catch {
+      return null;
+    }
+  }
+
+  async deleteFlashcard(flashcardId: string) {
+    try {
+      await prisma.flashcard.delete({ where: { id: flashcardId } });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  // ===================== CARD =====================
+  async addCards(flashcardId: string, items: CreateCardRecord[]) {
     return prisma.$transaction(async (transaction) => {
-      await this.requireLesson(transaction, lessonId);
+      await this.requireFlashcard(transaction, flashcardId);
 
-      const words = items.map((item) => item.word);
-      const existing = await transaction.vocabulary.findMany({
-        where: { lessonId, word: { in: words } },
-        select: { word: true },
+      const existingCardsCount = await transaction.card.count({
+        where: { flashcardId },
       });
-      if (existing.length) {
-        throw new AppError(
-          `Vocabulary already exists in this lesson: ${existing.map(({ word }) => word).join(", ")}`,
-          409,
-        );
-      }
 
-      await transaction.vocabulary.createMany({
-        data: items.map((item) => ({ lessonId, ...item })),
-      });
-      return transaction.vocabulary.findMany({
-        where: { lessonId, word: { in: words } },
-        orderBy: { createdAt: "asc" },
+      const cardsData = items.map((item, index) => ({
+        flashcardId,
+        front: item.front,
+        back: item.back,
+        hint: item.hint ?? null,
+        orderIndex: item.orderIndex ?? existingCardsCount + index,
+      }));
+
+      await transaction.card.createMany({ data: cardsData });
+
+      return transaction.card.findMany({
+        where: { flashcardId },
+        orderBy: { orderIndex: "asc" },
       });
     });
   }
 
-  async listVocabulary(lessonId: string) {
-    await this.requireLesson(prisma, lessonId);
-    return prisma.vocabulary.findMany({
-      where: { lessonId },
-      orderBy: { createdAt: "asc" },
+  async listCards(flashcardId: string) {
+    await this.requireFlashcard(prisma, flashcardId);
+    return prisma.card.findMany({
+      where: { flashcardId },
+      orderBy: { orderIndex: "asc" },
     });
   }
 
-  async createQuestion(lessonId: string, data: CreateQuestionRecord) {
+  async getCard(cardId: string) {
+    return prisma.card.findUnique({ where: { id: cardId } });
+  }
+
+  async updateCard(cardId: string, data: UpdateCardRecord) {
+    try {
+      return await prisma.card.update({ where: { id: cardId }, data });
+    } catch {
+      return null;
+    }
+  }
+
+  async deleteCard(cardId: string) {
+    try {
+      await prisma.card.delete({ where: { id: cardId } });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  // ===================== QUESTION =====================
+  async createQuestion(flashcardId: string, data: CreateQuestionRecord) {
     return prisma.$transaction(async (transaction) => {
-      await this.requireLesson(transaction, lessonId);
-      const vocabulary = data.vocabularyId
-        ? await transaction.vocabulary.findUnique({
-            where: { id: data.vocabularyId },
-            select: { lessonId: true },
+      await this.requireFlashcard(transaction, flashcardId);
+      const effectiveCardId = data.cardId ?? data.vocabularyId ?? null;
+      const card = effectiveCardId
+        ? await transaction.card.findUnique({
+            where: { id: effectiveCardId },
+            select: { flashcardId: true },
           })
         : null;
-      assertTargetVocabulary(lessonId, data.vocabularyId, vocabulary);
+      assertTargetCard(flashcardId, effectiveCardId, card);
 
       return transaction.question.create({
         data: {
-          lesson: { connect: { id: lessonId } },
-          ...(data.vocabularyId
-            ? { vocabulary: { connect: { id: data.vocabularyId } } }
-            : {}),
+          flashcard: { connect: { id: flashcardId } },
+          ...(effectiveCardId ? { card: { connect: { id: effectiveCardId } } } : {}),
           prompt: data.prompt,
           options: data.options,
           correctOptionIndex: data.correctOptionIndex,
@@ -112,14 +236,14 @@ export class ContentRepository {
     });
   }
 
-  async listQuestions(lessonId: string) {
-    await this.requireLesson(prisma, lessonId);
+  async listQuestions(flashcardId: string) {
+    await this.requireFlashcard(prisma, flashcardId);
     return prisma.question.findMany({
-      where: { lessonId },
+      where: { flashcardId },
       select: {
         id: true,
-        lessonId: true,
-        vocabularyId: true,
+        flashcardId: true,
+        cardId: true,
         prompt: true,
         options: true,
         createdAt: true,
@@ -134,8 +258,8 @@ export class ContentRepository {
       where: { id: questionId },
       select: {
         id: true,
-        lessonId: true,
-        vocabularyId: true,
+        flashcardId: true,
+        cardId: true,
         correctOptionIndex: true,
         prompt: true,
         options: true,
@@ -147,46 +271,30 @@ export class ContentRepository {
     return prisma.question.findUnique({ where: { id: questionId } });
   }
 
-  async listManagedQuestions(lessonId: string) {
-    await this.requireLesson(prisma, lessonId);
+  async listManagedQuestions(flashcardId: string) {
+    await this.requireFlashcard(prisma, flashcardId);
     return prisma.question.findMany({
-      where: { lessonId },
+      where: { flashcardId },
       orderBy: { createdAt: "asc" },
     });
-  }
-
-  async updateLesson(lessonId: string, data: CreateLessonRecord) {
-    try {
-      return await prisma.lesson.update({ where: { id: lessonId }, data });
-    } catch {
-      return null;
-    }
-  }
-
-  async deleteLesson(lessonId: string) {
-    try {
-      await prisma.lesson.delete({ where: { id: lessonId } });
-      return true;
-    } catch {
-      return false;
-    }
   }
 
   async updateQuestion(questionId: string, data: CreateQuestionRecord) {
     return prisma.$transaction(async (transaction) => {
       const existing = await transaction.question.findUnique({
         where: { id: questionId },
-        select: { id: true, lessonId: true },
+        select: { id: true, flashcardId: true },
       });
       if (!existing) return null;
 
-      const vocabulary = data.vocabularyId
-        ? await transaction.vocabulary.findUnique({
-            where: { id: data.vocabularyId },
-            select: { lessonId: true },
+      const effectiveCardId = data.cardId ?? data.vocabularyId ?? null;
+      const card = effectiveCardId
+        ? await transaction.card.findUnique({
+            where: { id: effectiveCardId },
+            select: { flashcardId: true },
           })
         : null;
-      assertTargetVocabulary(existing.lessonId, data.vocabularyId, vocabulary);
+      assertTargetCard(existing.flashcardId, effectiveCardId, card);
 
       return transaction.question.update({
         where: { id: questionId },
@@ -194,7 +302,7 @@ export class ContentRepository {
           prompt: data.prompt,
           options: data.options,
           correctOptionIndex: data.correctOptionIndex,
-          vocabularyId: data.vocabularyId,
+          cardId: effectiveCardId,
         },
       });
     });
@@ -209,15 +317,27 @@ export class ContentRepository {
     }
   }
 
-  private async requireLesson(
+  // ===================== HELPERS =====================
+  private async requireFolder(
     client: Prisma.TransactionClient | typeof prisma,
-    lessonId: string,
+    folderId: string,
   ): Promise<void> {
-    const lesson = await client.lesson.findUnique({
-      where: { id: lessonId },
+    const folder = await client.folder.findUnique({
+      where: { id: folderId },
       select: { id: true },
     });
-    if (!lesson) throw new AppError("Lesson not found", 404);
+    if (!folder) throw new AppError("Folder not found", 404);
+  }
+
+  private async requireFlashcard(
+    client: Prisma.TransactionClient | typeof prisma,
+    flashcardId: string,
+  ): Promise<void> {
+    const flashcard = await client.flashcard.findUnique({
+      where: { id: flashcardId },
+      select: { id: true },
+    });
+    if (!flashcard) throw new AppError("Flashcard deck not found", 404);
   }
 }
 

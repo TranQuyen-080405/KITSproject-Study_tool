@@ -1,76 +1,109 @@
 import { prisma } from "../src/db.js";
 
-const lessonName = "Chào hỏi tiếng Hàn";
+const folderName = "Tiếng Hàn Sơ Cấp";
+const flashcardTitle = "Chào hỏi tiếng Hàn";
 
 async function main() {
-  const existingLesson = await prisma.lesson.findFirst({ where: { name: lessonName } });
-  const lesson = existingLesson
-    ? await prisma.lesson.update({
-        where: { id: existingLesson.id },
-        data: { description: "Bài học mẫu để luyện từ vựng và hội thoại cơ bản." },
+  // 1. Seed or find Folder
+  const existingFolder = await prisma.folder.findFirst({ where: { name: folderName } });
+  const folder = existingFolder
+    ? await prisma.folder.update({
+        where: { id: existingFolder.id },
+        data: { description: "Thư mục các bài học tiếng Hàn trình độ nhập môn và sơ cấp." },
       })
-    : await prisma.lesson.create({
+    : await prisma.folder.create({
         data: {
-          name: lessonName,
-          description: "Bài học mẫu để luyện từ vựng và hội thoại cơ bản.",
+          name: folderName,
+          description: "Thư mục các bài học tiếng Hàn trình độ nhập môn và sơ cấp.",
         },
       });
 
-  const vocabularyItems = [
-    { word: "안녕하세요", meaning: "xin chào" },
-    { word: "감사합니다", meaning: "cảm ơn" },
-    { word: "미안합니다", meaning: "xin lỗi" },
+  // 2. Seed or find Flashcard Deck
+  const existingDeck = await prisma.flashcard.findFirst({ where: { title: flashcardTitle } });
+  const flashcard = existingDeck
+    ? await prisma.flashcard.update({
+        where: { id: existingDeck.id },
+        data: {
+          folderId: folder.id,
+          description: "Bộ thẻ từ vựng và câu chào hỏi giao tiếp cơ bản.",
+        },
+      })
+    : await prisma.flashcard.create({
+        data: {
+          title: flashcardTitle,
+          folderId: folder.id,
+          description: "Bộ thẻ từ vựng và câu chào hỏi giao tiếp cơ bản.",
+        },
+      });
+
+  // 3. Seed Cards
+  const cardItems = [
+    { front: "안녕하세요", back: "xin chào", orderIndex: 0 },
+    { front: "감사합니다", back: "cảm ơn", orderIndex: 1 },
+    { front: "미안합니다", back: "xin lỗi", orderIndex: 2 },
   ];
-  const vocabulary = [];
-  for (const item of vocabularyItems) {
-    vocabulary.push(
-      await prisma.vocabulary.upsert({
-        where: { lessonId_word: { lessonId: lesson.id, word: item.word } },
-        update: { meaning: item.meaning },
-        create: { lessonId: lesson.id, ...item },
-      }),
-    );
+
+  const cards = [];
+  for (const item of cardItems) {
+    const existing = await prisma.card.findFirst({
+      where: { flashcardId: flashcard.id, front: item.front },
+    });
+    if (existing) {
+      cards.push(
+        await prisma.card.update({
+          where: { id: existing.id },
+          data: { back: item.back, orderIndex: item.orderIndex },
+        }),
+      );
+    } else {
+      cards.push(
+        await prisma.card.create({
+          data: { flashcardId: flashcard.id, ...item },
+        }),
+      );
+    }
   }
 
-  const questions = [
+  // 4. Seed Questions
+  const questionItems = [
     {
       prompt: "안녕하세요 có nghĩa là gì?",
-      vocabularyId: vocabulary[0].id,
+      cardId: cards[0].id,
       options: ["xin chào", "cảm ơn", "xin lỗi", "tạm biệt"],
       correctOptionIndex: 0,
     },
     {
       prompt: "Chọn nghĩa đúng của 감사합니다.",
-      vocabularyId: vocabulary[1].id,
+      cardId: cards[1].id,
       options: ["xin lỗi", "cảm ơn", "xin chào", "không sao"],
       correctOptionIndex: 1,
     },
     {
       prompt: "Khi muốn xin lỗi lịch sự, bạn chọn câu nào?",
-      vocabularyId: vocabulary[2].id,
+      cardId: cards[2].id,
       options: ["안녕하세요", "감사합니다", "미안합니다", "안녕히 가세요"],
       correctOptionIndex: 2,
     },
   ];
 
-  for (const question of questions) {
+  for (const q of questionItems) {
     const existingQuestion = await prisma.question.findFirst({
-      where: { lessonId: lesson.id, prompt: question.prompt },
+      where: { flashcardId: flashcard.id, prompt: q.prompt },
     });
     if (existingQuestion) {
       await prisma.question.update({
         where: { id: existingQuestion.id },
-        data: question,
+        data: q,
       });
     } else {
       await prisma.question.create({
-        data: { lessonId: lesson.id, ...question },
+        data: { flashcardId: flashcard.id, ...q },
       });
     }
   }
 
   console.log(
-    `Seeded lesson "${lesson.name}" (${lesson.id}) with ${vocabulary.length} words and ${questions.length} questions.`,
+    `Seeded folder "${folder.name}" with deck "${flashcard.title}" (${cards.length} cards, ${questionItems.length} questions).`,
   );
 }
 

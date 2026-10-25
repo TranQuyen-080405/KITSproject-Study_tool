@@ -2,37 +2,35 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import {
   addLessonVocabularies,
   createLesson,
-  createQuestion,
   deleteLesson,
-  deleteQuestion,
   fetchLessonSummaries,
   fetchLessonVocabularies,
-  fetchManagedQuestions,
   updateLesson,
-  updateQuestion,
   type ContentVocabulary,
-  type ManagedQuestion,
   type PublicLessonSummary,
 } from "../api/lessons-api";
 import { AppPage, AppSidebar } from "../components/app-sidebar";
-import { ArrowLeftIcon2D, BookIcon2D, CheckIcon2D, PlusIcon2D, QuestionIcon2D, TrashIcon2D } from "../components/icons";
+import { ArrowLeftIcon2D, BookIcon2D, CheckIcon2D, PlusIcon2D, TrashIcon2D } from "../components/icons";
 import type { Account } from "../types/auth";
-import { inferVocabularyFromQuestion } from "../lib/infer-vocabulary";
 import "../styles/app.css";
 
 type ManageContentPageProps = {
   onNavigate: (page: AppPage) => void;
   account?: Account;
   onLogout?: () => void;
+  initialLessonId?: string;
 };
 
-const emptyOptions = ["", "", "", ""] as [string, string, string, string];
 
-export function ManageContentPage({ onNavigate, account, onLogout }: ManageContentPageProps) {
+export function ManageContentPage({
+  onNavigate,
+  account,
+  onLogout,
+  initialLessonId,
+}: ManageContentPageProps) {
   const [lessons, setLessons] = useState<PublicLessonSummary[]>([]);
   const [selectedLessonId, setSelectedLessonId] = useState<string>();
   const [vocabulary, setVocabulary] = useState<ContentVocabulary[]>([]);
-  const [questions, setQuestions] = useState<ManagedQuestion[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string>();
@@ -44,14 +42,6 @@ export function ManageContentPage({ onNavigate, account, onLogout }: ManageConte
   const [vocabWord, setVocabWord] = useState("");
   const [vocabMeaning, setVocabMeaning] = useState("");
   const vocabWordInputRef = useRef<HTMLInputElement>(null);
-
-  const [editingQuestionId, setEditingQuestionId] = useState<string>();
-  const [prompt, setPrompt] = useState("");
-  const [options, setOptions] = useState(emptyOptions);
-  const [correctOptionIndex, setCorrectOptionIndex] = useState(0);
-  const [vocabularyId, setVocabularyId] = useState("");
-
-  const [activeTab, setActiveTab] = useState<"vocab" | "question">("vocab");
 
   const selectedLesson = lessons.find((lesson) => lesson.lessonId === selectedLessonId);
 
@@ -74,13 +64,12 @@ export function ManageContentPage({ onNavigate, account, onLogout }: ManageConte
   }
 
   useEffect(() => {
-    void loadLessons();
-  }, []);
+    void loadLessons(initialLessonId);
+  }, [initialLessonId]);
 
   useEffect(() => {
     if (!selectedLessonId) {
       setVocabulary([]);
-      setQuestions([]);
       return;
     }
 
@@ -89,13 +78,9 @@ export function ManageContentPage({ onNavigate, account, onLogout }: ManageConte
     async function loadDetail() {
       setErrorMessage(undefined);
       try {
-        const [nextVocabulary, nextQuestions] = await Promise.all([
-          fetchLessonVocabularies(lessonId),
-          fetchManagedQuestions(lessonId),
-        ]);
+        const nextVocabulary = await fetchLessonVocabularies(lessonId);
         if (!isMounted) return;
         setVocabulary(nextVocabulary);
-        setQuestions(nextQuestions);
       } catch (error) {
         if (isMounted) {
           setErrorMessage(
@@ -121,7 +106,6 @@ export function ManageContentPage({ onNavigate, account, onLogout }: ManageConte
 
   function selectLesson(lessonId: string) {
     setSelectedLessonId(lessonId);
-    resetQuestionForm();
     setStatusMessage(undefined);
     setErrorMessage(undefined);
   }
@@ -131,18 +115,8 @@ export function ManageContentPage({ onNavigate, account, onLogout }: ManageConte
     setLessonName("");
     setLessonDescription("");
     setVocabulary([]);
-    setQuestions([]);
-    resetQuestionForm();
     setStatusMessage(undefined);
     setErrorMessage(undefined);
-  }
-
-  function resetQuestionForm() {
-    setEditingQuestionId(undefined);
-    setPrompt("");
-    setOptions(emptyOptions);
-    setCorrectOptionIndex(0);
-    setVocabularyId("");
   }
 
   async function handleCreateLesson(event: FormEvent) {
@@ -226,44 +200,6 @@ export function ManageContentPage({ onNavigate, account, onLogout }: ManageConte
     }
   }
 
-  async function handleSaveQuestion(event: FormEvent) {
-    event.preventDefault();
-    if (!selectedLessonId) return;
-    setIsSaving(true);
-    setErrorMessage(undefined);
-    setStatusMessage(undefined);
-
-    const linkedVocabularyId =
-      vocabularyId || inferVocabularyFromQuestion(prompt, options, vocabulary) || null;
-
-    const payload = {
-      prompt,
-      options,
-      correctOptionIndex,
-      vocabularyId: linkedVocabularyId,
-    };
-
-    try {
-      if (editingQuestionId) {
-        const question = await updateQuestion(editingQuestionId, payload);
-        setQuestions((current) =>
-          current.map((item) => (item.id === question.id ? question : item)),
-        );
-        setStatusMessage("Đã cập nhật câu hỏi.");
-      } else {
-        const question = await createQuestion(selectedLessonId, payload);
-        setQuestions((current) => [...current, question]);
-        setStatusMessage("Đã tạo câu hỏi trắc nghiệm mới.");
-        await loadLessons(selectedLessonId);
-      }
-      resetQuestionForm();
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Không lưu được câu hỏi.");
-    } finally {
-      setIsSaving(false);
-    }
-  }
-
   return (
     <div className="app-layout">
       <AppSidebar account={account} activePage="manage-content" onLogout={onLogout} onNavigate={onNavigate} />
@@ -315,7 +251,7 @@ export function ManageContentPage({ onNavigate, account, onLogout }: ManageConte
                           {lesson.lessonTitle}
                         </strong>
                         <span style={{ fontSize: "11.5px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
-                          {lesson.vocabularyCount} từ · {lesson.questionCount} câu hỏi
+                          {lesson.vocabularyCount} từ
                         </span>
                       </button>
                     </li>
@@ -392,27 +328,8 @@ export function ManageContentPage({ onNavigate, account, onLogout }: ManageConte
 
             {selectedLessonId && (
               <>
-                <div style={{ display: "flex", gap: "6px", background: "var(--bg-glass-input)", padding: "3px", borderRadius: "var(--radius-md)" }}>
-                  <button
-                    className={`manage-secondary-button${activeTab === "vocab" ? " tag-active" : ""}`}
-                    onClick={() => setActiveTab("vocab")}
-                    style={{ flex: 1, minHeight: "32px", border: 0, justifyContent: "center", whiteSpace: "nowrap" }}
-                    type="button"
-                  >
-                    <BookIcon2D size={14} /> Từ vựng ({vocabulary.length})
-                  </button>
-                  <button
-                    className={`manage-secondary-button${activeTab === "question" ? " tag-active" : ""}`}
-                    onClick={() => setActiveTab("question")}
-                    style={{ flex: 1, minHeight: "32px", border: 0, justifyContent: "center", whiteSpace: "nowrap" }}
-                    type="button"
-                  >
-                    <QuestionIcon2D size={14} /> Trắc nghiệm ({questions.length})
-                  </button>
-                </div>
-
                 {/* Tab 1: Từ vựng Fast Entry */}
-                {activeTab === "vocab" && (
+                {selectedLessonId && (
                   <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
                     <form onSubmit={handleAddVocabulary} style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                       <h3 style={{ margin: 0, fontSize: "13.5px", fontWeight: 700 }}>Thêm từ vựng</h3>
@@ -476,123 +393,6 @@ export function ManageContentPage({ onNavigate, account, onLogout }: ManageConte
                   </div>
                 )}
 
-                {/* Tab 2: MCQ Form & Preview */}
-                {activeTab === "question" && (
-                  <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-                    <form onSubmit={handleSaveQuestion} style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                      <h3 style={{ margin: 0, fontSize: "14px", fontWeight: 700 }}>
-                        {editingQuestionId ? "Sửa câu hỏi" : "Tạo câu hỏi trắc nghiệm mới"}
-                      </h3>
-
-                      <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12.5px", fontWeight: 600 }}>
-                        Đề bài câu hỏi
-                        <input
-                          maxLength={500}
-                          onChange={(e) => setPrompt(e.target.value)}
-                          placeholder="Nghĩa tiếng Việt của từ '감사합니다' là gì?"
-                          required
-                          value={prompt}
-                        />
-                      </label>
-
-                      <label className="manage-field-label">
-                        Từ vựng liên kết
-                        <select
-                          className="manage-select"
-                          onChange={(e) => setVocabularyId(e.target.value)}
-                          value={vocabularyId}
-                        >
-                          <option value="">Tự nhận diện từ đề bài / đáp án</option>
-                          {vocabulary.map((item) => (
-                            <option key={item.id} value={item.id}>
-                              {item.word} — {item.meaning}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-                        {options.map((opt, idx) => {
-                          const isCorrect = correctOptionIndex === idx;
-                          return (
-                            <div
-                              key={idx}
-                              style={{
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: "4px",
-                                padding: "8px",
-                                border: `1.5px solid ${isCorrect ? "var(--state-success)" : "var(--border-glass-subtle)"}`,
-                                borderRadius: "var(--radius-md)",
-                                background: isCorrect ? "var(--state-success-bg)" : "var(--bg-glass-input)"
-                              }}
-                            >
-                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                <span style={{ fontWeight: 700, fontSize: "11.5px" }}>Lựa chọn {String.fromCharCode(65 + idx)}</span>
-                                <label style={{ display: "flex", alignItems: "center", gap: "4px", cursor: "pointer", fontSize: "11.5px", margin: 0, whiteSpace: "nowrap" }}>
-                                  <input
-                                    checked={isCorrect}
-                                    name="correctOption"
-                                    onChange={() => setCorrectOptionIndex(idx)}
-                                    type="radio"
-                                  />
-                                  <span style={{ color: isCorrect ? "var(--state-success)" : "var(--text-muted)", fontWeight: isCorrect ? 700 : 400 }}>
-                                    {isCorrect ? "Đáp án đúng" : "Đáp án đúng"}
-                                  </span>
-                                </label>
-                              </div>
-                              <input
-                                maxLength={300}
-                                onChange={(e) => {
-                                  const next = [...options] as typeof emptyOptions;
-                                  next[idx] = e.target.value;
-                                  setOptions(next);
-                                }}
-                                placeholder={`Nội dung ${String.fromCharCode(65 + idx)}`}
-                                required
-                                value={opt}
-                              />
-                            </div>
-                          );
-                        })}
-                      </div>
-
-                      <div style={{ display: "flex", gap: "8px" }}>
-                        <button className="manage-primary-button interactive-element" disabled={isSaving} style={{ padding: "7px 14px", fontSize: "12.5px", whiteSpace: "nowrap" }} type="submit">
-                          {editingQuestionId ? "Cập nhật câu hỏi" : <><PlusIcon2D size={13} /> Lưu câu hỏi</>}
-                        </button>
-                        {editingQuestionId && (
-                          <button className="manage-secondary-button interactive-element" onClick={resetQuestionForm} style={{ padding: "7px 14px", fontSize: "12.5px", whiteSpace: "nowrap" }} type="button">
-                            Hủy sửa
-                          </button>
-                        )}
-                      </div>
-                    </form>
-
-                    {/* Preview Section */}
-                    {prompt && (
-                      <div className="mcq-card" style={{ background: "rgba(0,0,0,0.1)", borderStyle: "dashed" }}>
-                        <p className="eyebrow">XEM TRƯỚC</p>
-                        <h2 style={{ fontSize: "16px", margin: "4px 0 10px" }}>{prompt}</h2>
-                        <div className="answer-list">
-                          {options.map((opt, idx) => (
-                            <div
-                              key={idx}
-                              className="answer-option"
-                              style={{
-                                borderColor: correctOptionIndex === idx ? "var(--state-success)" : "var(--border-glass-subtle)",
-                                background: correctOptionIndex === idx ? "var(--state-success-bg)" : "var(--bg-glass-input)"
-                              }}
-                            >
-                              <span className="answer-letter">{String.fromCharCode(65 + idx)}</span>
-                              <span>{opt || `(Lựa chọn ${String.fromCharCode(65 + idx)})`}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
               </>
             )}
             </div>

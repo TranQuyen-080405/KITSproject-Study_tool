@@ -54,8 +54,8 @@ Ensure-Env 'CONTENT_SERVICE_URL' 'http://localhost:3001'
 Ensure-Env 'ANALYTICS_SERVICE_URL' 'http://localhost:3003'
 Ensure-Env 'AI_SERVICE_URL' 'http://localhost:3004'
 Ensure-Env 'USER_DATABASE_URL' 'postgresql+psycopg://postgres:postgres@localhost:5432/user_service'
-Ensure-Env 'CONTENT_DATABASE_URL' 'postgresql://postgres:postgres@localhost:5432/content_service'
-Ensure-Env 'DATABASE_URL' 'postgresql+asyncpg://postgres:postgres@localhost:5432/ai_service'
+Ensure-Env 'CONTENT_DATABASE_URL' 'postgresql://content_user:KITS2026@localhost:5432/content_service'
+Ensure-Env 'DATABASE_URL' 'postgresql+asyncpg://chatbot_user:KITS2026@localhost:5432/chatbot_service'
 Ensure-Env 'FRONTEND_URL' 'http://localhost:5173'
 Ensure-Env 'FRONTEND_ORIGIN' 'http://localhost:5173,http://127.0.0.1:5173'
 Ensure-Env 'USER_JWT_SECRET' 'local-development-secret-change-in-production'
@@ -146,6 +146,22 @@ function Ensure-ContentDb() {
   }
 }
 
+function Ensure-AnalyticsDb() {
+  # Freeze a legacy JSON writer before taking the import snapshot.
+  Stop-ListenPort 3003
+  Push-Location (Join-Path $Root 'apps\analytics-service')
+  try {
+    Write-Host '  [analytics-service] Prisma client + PostgreSQL migrations...'
+    cmd /c 'corepack pnpm prisma:generate'
+    if ($LASTEXITCODE -ne 0) { exit 1 }
+    cmd /c 'corepack pnpm db:deploy'
+    if ($LASTEXITCODE -ne 0) { exit 1 }
+    Write-Host '  [analytics-service] Import legacy JSON (safe to repeat)...'
+    cmd /c 'corepack pnpm db:import-json'
+    if ($LASTEXITCODE -ne 0) { exit 1 }
+  } finally { Pop-Location }
+}
+
 function Stop-ListenPort([int]$Port) {
   $connections = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
   foreach ($connection in $connections) {
@@ -204,11 +220,12 @@ Write-Host '[1/5] Python venv (tu tao + pip install lan dau)...'
 Ensure-PythonVenv $userDir 'user-service'
 Ensure-PythonVenv $aiDir 'ai-service'
 
-Write-Host '[2/5] Content DB (migrate + seed)...'
+Write-Host '[2/5] Content + Analytics DB (PostgreSQL)...'
 Ensure-ContentDb
+Ensure-AnalyticsDb
 
 Write-Host '[3/5] Start services (hidden, no Docker)...'
-Write-Host '      Postgres local: localhost:5432 (user_service / content_service / ai_service)'
+Write-Host '      Postgres local: localhost:5432 (user_service / content_service / ai_service / analytics_service)'
 Write-Host '      Giai phong port cu (5173, 3000, 3001, 3003, 8001, 3004)...'
 foreach ($port in @(5173, 3000, 3001, 3003, 8001, 3004)) {
   Stop-ListenPort $port
@@ -254,16 +271,6 @@ if (-not $allHealthy) {
   exit 1
 }
 
-try {
-  $contentCheck = Invoke-WebRequest -UseBasicParsing 'http://127.0.0.1:3000/api/v1/content/lessons' -TimeoutSec 5
-  if ($contentCheck.StatusCode -ne 200) { throw 'Content API khong tra 200' }
-  Write-Host '      OK gateway -> content -> PostgreSQL'
-} catch {
-  Write-Host ('[ERROR] Gateway/Content/DB check that bai: ' + $_.Exception.Message)
-  Stop-StartedServices
-  exit 1
-}
-
 $seedLog = Join-Path $LogDir 'seed-user.log'
 $env:PYTHONPATH = $userDir
 $py = Join-Path $userDir '.venv\Scripts\python.exe'
@@ -282,6 +289,20 @@ if ($seedExit -ne 0) {
 } else {
   Write-Host '      Seed OK: username=test password=test1234'
   Get-Content $seedLog
+}
+
+try {
+  $loginBody = @{ username = 'test'; password = 'test1234' } | ConvertTo-Json
+  $loginResult = Invoke-RestMethod -Method Post -Uri 'http://127.0.0.1:3000/api/v1/auth/login' -ContentType 'application/json' -Body $loginBody -TimeoutSec 10
+  if (-not $loginResult.accessToken) { throw 'Missing access token from login' }
+  $authHeaders = @{ Authorization = ('Bearer ' + $loginResult.accessToken) }
+  $contentCheck = Invoke-WebRequest -UseBasicParsing 'http://127.0.0.1:3000/api/v1/content/lessons' -Headers $authHeaders -TimeoutSec 10
+  if ($contentCheck.StatusCode -ne 200) { throw 'Content API khong tra 200' }
+  Write-Host '      OK authenticated gateway -> content -> PostgreSQL'
+} catch {
+  Write-Host ('[ERROR] Gateway/Content/DB check that bai: ' + $_.Exception.Message)
+  Stop-StartedServices
+  exit 1
 }
 
 Write-Host '[5/5] Done.'

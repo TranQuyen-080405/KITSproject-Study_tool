@@ -7,14 +7,27 @@
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --passWithNoTests",
+    "prepare": "prisma generate --config prisma.config.ts",
+    "predev": "prisma generate --config prisma.config.ts",
+    "prisma:generate": "prisma generate --config prisma.config.ts",
+    "db:deploy": "prisma migrate deploy --config prisma.config.ts",
+    "db:import-json": "tsx scripts/import-json.ts",
+    "test:integration": "node tests/scripts/run-postgres-tests.mjs"
   },
   "dependencies": {
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "@prisma/adapter-pg": "^7.9.1",
+    "@prisma/client": "^7.9.1",
+    "pg": "^8.23.0"
   },
   "devDependencies": {
     "@types/express": "^5.0.3",
     "@types/node": "^22.15.3",
-    "tsx": "^4.19.3"
+    "tsx": "^4.19.3",
+    "prisma": "^7.9.1",
+    "@types/pg": "^8.23.1",
+    "supertest": "^7.2.2",
+    "@types/supertest": "^6.0.3"
   }
 }

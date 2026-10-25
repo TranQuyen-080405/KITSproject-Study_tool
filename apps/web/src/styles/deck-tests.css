@@ -1,0 +1,31 @@
+.deck-tests { display: grid; gap: 18px; }
+.test-panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.test-panel-heading.glass-card { padding: 24px; border-radius: 18px; }
+.deck-tests h2, .deck-tests h3 { margin: 0 0 8px; }
+.deck-tests p { line-height: 1.6; }
+.test-panel-heading p { margin: 0; color: var(--text-muted); max-width: 580px; }
+.test-muted { color: var(--text-muted); font-size: 13px; }
+.test-history, .test-review-list { display: grid; gap: 12px; }
+.test-history-row { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px; text-align: left; color: var(--text-main); border: 1px solid var(--border-glass-subtle); cursor: pointer; border-radius: 14px; }
+.test-history-row:hover { border-color: var(--brand-primary); }
+.test-row-subtitle { display: block; margin-top: 6px; color: var(--text-muted); font-size: 12px; }
+.test-history-score { text-align: right; display: grid; gap: 4px; }
+.test-history-score strong { color: var(--brand-primary); font-size: 20px; }
+.test-history-score span { color: var(--text-muted); font-size: 12px; }
+.test-question { padding: 24px; border-radius: 18px; }
+.test-question h2, .test-question h3 { line-height: 1.6; }
+.test-question progress { width: 100%; accent-color: var(--brand-primary); margin-bottom: 20px; }
+.test-options { display: grid; gap: 10px; margin: 20px 0; }
+.test-option { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; padding: 16px; color: var(--text-main); background: var(--bg-glass-input); border: 1px solid var(--border-glass-subtle); border-radius: 12px; text-align: left; font: inherit; }
+button.test-option { cursor: pointer; }
+button.test-option:disabled { cursor: default; opacity: 1; }
+.test-option strong { font-size: 12px; }
+.test-option.is-correct { border-color: #22c55e; background: rgba(34,197,94,.13); }
+.test-option.is-wrong { border-color: #ef4444; background: rgba(239,68,68,.13); }
+.test-attempt-actions { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 20px; }
+.deck-tests button:disabled { cursor: wait; }
+.deck-tests button:focus-visible { outline: 2px solid var(--brand-primary); outline-offset: 3px; }
+@media (max-width: 600px) {
+  .test-question, .test-panel-heading.glass-card { padding: 16px; }
+  .test-history-row { align-items: flex-start; padding: 16px; }
+}

@@ -7,12 +7,16 @@ import {
   ChartIcon2D,
   CheckIcon2D,
   EditIcon2D,
+  LayersIcon2D,
   LogoutIcon2D,
   SettingsIcon2D,
 } from "./icons";
 
 export type AppPage =
   | "lessons"
+  | "flashcards"
+  | "flashcard-detail"
+  | "flashcard-study"
   | "manage-content"
   | "chatbot"
   | "dashboard"
@@ -27,8 +31,7 @@ type NavigationItem = {
 };
 
 const navigationItems: NavigationItem[] = [
-  { page: "lessons", label: "Bài học", icon: <BookIcon2D size={18} /> },
-  { page: "manage-content", label: "Soạn bài", icon: <EditIcon2D size={18} /> },
+  { page: "flashcards", label: "Flashcards", icon: <LayersIcon2D size={18} /> },
   { page: "chatbot", label: "Trợ lý AI", icon: <BotIcon2D size={18} /> },
   { page: "dashboard", label: "Bảng thống kê", icon: <ChartIcon2D size={18} /> },
 ];
@@ -150,7 +153,7 @@ export function AppSidebar({ activePage, onNavigate, account, onLogout }: AppSid
             <h2 style={{ fontSize: "11px", fontWeight: 800, margin: "6px 0 4px", color: "var(--brand-primary)", letterSpacing: "0.05em" }}>
               CHỌN ẢNH NỀN
             </h2>
-            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               <button
                 className={`manage-secondary-button${currentBg === "background-1" ? " tag-active" : ""}`}
                 onClick={() => setCurrentBg("background-1")}

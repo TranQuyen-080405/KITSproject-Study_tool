@@ -1,5 +1,10 @@
 ﻿# Content Service
 
+All business APIs require a User Service bearer access token. Configure `USER_SERVICE_URL`
+(local default `http://localhost:8001`; Docker `http://user-service:8000`). Health remains public.
+See [service authentication](../../docs/service-auth.md) for account isolation and local setup.
+
+
 Content Service quản lý bài học, từ vựng và câu hỏi trắc nghiệm. Service sở hữu
 PostgreSQL riêng và không ghi trạng thái học/đã thuộc; việc đó thuộc Learning Service.
 

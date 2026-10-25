@@ -1,6 +1,8 @@
-﻿import express, { type NextFunction, type Request, type Response } from "express";
+import express, { type NextFunction, type Request, type Response } from "express";
 import { AppError } from "./errors.js";
 import { router } from "./routes/index.js";
+import { createContentAuth } from "./auth.js";
+import { createDeckTestRouter } from "./routes/deck-tests.js";
 
 export const app = express();
 
@@ -10,6 +12,8 @@ app.get("/health", (_request, response) => {
   response.json({ service: "content-service", status: "ok" });
 });
 
+app.use("/api/v1/content", createContentAuth());
+app.use("/api/v1/content", createDeckTestRouter());
 app.use("/api/v1/content", router);
 
 app.use(

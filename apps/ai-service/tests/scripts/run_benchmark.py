@@ -13,6 +13,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import os
 import re
 import sys
 import urllib.error
@@ -44,13 +45,13 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Benchmark AI service chat replies")
     parser.add_argument("--csv", type=Path, default=DEFAULT_CSV, help="Benchmark cases CSV")
     parser.add_argument("--base-url", default="http://localhost:3004", help="AI service base URL")
-    parser.add_argument("--user-id", default="benchmark-runner", help="x-user-id header")
+    parser.add_argument("--access-token", default=os.environ.get("ACCESS_TOKEN", ""), help="User Service bearer token (or ACCESS_TOKEN env var)")
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR, help="Output directory")
     parser.add_argument("--timeout", type=float, default=60.0, help="HTTP timeout seconds")
     return parser.parse_args()
 
 
-def api_request(base_url: str, method: str, path: str, user_id: str, body: dict | None, timeout: float) -> dict:
+def api_request(base_url: str, method: str, path: str, access_token: str, body: dict | None, timeout: float) -> dict:
     data = None if body is None else json.dumps(body).encode("utf-8")
     request = urllib.request.Request(
         f"{base_url.rstrip('/')}{path}",
@@ -58,7 +59,7 @@ def api_request(base_url: str, method: str, path: str, user_id: str, body: dict 
         method=method,
         headers={
             "Content-Type": "application/json",
-            "x-user-id": user_id,
+            "Authorization": "Bearer " + access_token,
             "Accept": "application/json",
         },
     )
@@ -121,6 +122,8 @@ def load_cases(path: Path) -> list[dict[str, str]]:
 
 
 def run_benchmark(args: argparse.Namespace) -> int:
+    if not args.access_token:
+        raise SystemExit("Set ACCESS_TOKEN or --access-token to a valid User Service access token")
     cases = load_cases(args.csv)
     grouped: dict[str, list[dict[str, str]]] = defaultdict(list)
     for row in cases:
@@ -128,7 +131,7 @@ def run_benchmark(args: argparse.Namespace) -> int:
     for group_rows in grouped.values():
         group_rows.sort(key=lambda row: int(row["turn"]))
 
-    health = api_request(args.base_url, "GET", "/health", args.user_id, None, args.timeout)
+    health = api_request(args.base_url, "GET", "/health", args.access_token, None, args.timeout)
     if health.get("status") != "ok":
         raise SystemExit(f"AI service unhealthy: {health}")
 
@@ -140,7 +143,7 @@ def run_benchmark(args: argparse.Namespace) -> int:
             args.base_url,
             "POST",
             "/conversations",
-            args.user_id,
+            args.access_token,
             {"title": f"benchmark:{group}"},
             args.timeout,
         )
@@ -163,7 +166,7 @@ def run_benchmark(args: argparse.Namespace) -> int:
                     args.base_url,
                     "POST",
                     f"/conversations/{conversation_id}/messages",
-                    args.user_id,
+                    args.access_token,
                     {"content": prompt},
                     args.timeout,
                 )
