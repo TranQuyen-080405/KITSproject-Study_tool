@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import logoUrl from "../../../../assets/icons/logo-1.png";
+import logoUrl from "../assets/icons/logo-1.png";
 import type { Account } from "../types/auth";
 import {
   BotIcon2D,

@@ -17,8 +17,7 @@ services:
     depends_on: [user-service, content-service]
   user-service:
     build:
-      context: .
-      dockerfile: apps/user-service/Dockerfile
+      context: ./apps/user-service
     env_file:
       - path: ./apps/user-service/.env
         required: false
@@ -36,10 +35,9 @@ services:
       mailpit: { condition: service_started }
   content-service:
     build:
-      context: .
-      dockerfile: apps/content-service/Dockerfile
+      context: ./apps/content-service
     # Fresh dedicated mobile DB only; avoid the general db:deploy data-loss flag.
-    command: ["sh", "-c", "pnpm --filter @korean-learning/content-service exec prisma db push --config prisma.config.ts && exec pnpm --filter @korean-learning/content-service start"]
+    command: ["sh", "-c", "npx prisma db push --config prisma.config.ts && exec npm start"]
     environment:
       CONTENT_DATABASE_URL: postgresql://postgres:postgres@content-postgres:5432/content_service
       PORT: "3001"

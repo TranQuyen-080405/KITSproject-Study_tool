@@ -1,9 +1,12 @@
+# Build context is this directory. On Render, set Root Directory to apps/user-service/frontend.
 FROM node:22-alpine AS build
 
 WORKDIR /app
-COPY apps/user-service/frontend/package.json ./package.json
-RUN npm install
-COPY apps/user-service/frontend ./
+
+COPY package.json ./
+RUN npm install --ignore-scripts
+
+COPY . ./
 
 ARG VITE_API_URL=http://localhost:8001/api/v1
 ARG VITE_GOOGLE_CLIENT_ID=
@@ -12,6 +15,8 @@ ENV VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
 RUN npm run build
 
 FROM nginx:1.27-alpine
-COPY apps/user-service/frontend/nginx.conf /etc/nginx/conf.d/default.conf
+
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist /usr/share/nginx/html
+
 EXPOSE 80

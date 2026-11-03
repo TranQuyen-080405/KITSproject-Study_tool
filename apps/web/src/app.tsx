@@ -1,8 +1,8 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { App as CapacitorApp } from "@capacitor/app";
-import bg1 from "../../../assets/images/background-1.jpg";
-import bg2 from "../../../assets/images/background-2.jpg";
-import bg3 from "../../../assets/images/background-3.jpg";
+import bg1 from "./assets/images/background-1.jpg";
+import bg2 from "./assets/images/background-2.jpg";
+import bg3 from "./assets/images/background-3.jpg";
 import type { StrugglingWord } from "./api/analytics-api";
 import { AppPage } from "./components/app-sidebar";
 import { ChatbotPage } from "./pages/chatbot-page";

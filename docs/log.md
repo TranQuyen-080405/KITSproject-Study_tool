@@ -320,3 +320,8 @@ Format mỗi mục (do script tạo):
 - Nạp dữ liệu một tháng cho tài khoản test
 - Tạo 10 bộ từ và lịch sử học để tài khoản test trông như đã dùng khoảng một tháng
 ----------------------------------------
+
+--- Trần Quyền <2026-11-03 14:09>------
+- Dockerfile của từng service build trong chính folder đó
+- Render chỉ cần Root Directory, không cần Dockerfile Path
+----------------------------------------

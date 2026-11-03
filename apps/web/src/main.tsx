@@ -1,7 +1,7 @@
 // This file mounts the React web client into the HTML root element.
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import logoUrl from "../../../assets/icons/logo.png";
+import logoUrl from "./assets/icons/logo.png";
 import { App } from "./app";
 
 const favicon = document.querySelector<HTMLLinkElement>("link[rel='icon']") ?? document.createElement("link");

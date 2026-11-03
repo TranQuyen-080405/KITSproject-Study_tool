@@ -53,19 +53,16 @@ docker compose config
 
 Inside Docker Compose, the gateway reaches services by Compose service name, for example `http://user-service:8000`.
 
-Docker Compose remains an optional local-development path. Render deployment should use the native Node.js runtime below.
+Docker Compose remains an optional local-development path. The image in this folder builds by itself.
 
 ## Render Deployment
 
-This repository is a monorepo, so configure the Render Web Service from the repository root.
-
-Recommended Render configuration:
+Create one Render service per app. The form only asks for Root Directory; Render builds `Dockerfile` inside that folder.
 
 | Setting | Value |
 | --- | --- |
-| Runtime | `Node` |
-| Build Command | `corepack enable && pnpm install --frozen-lockfile && pnpm --filter @korean-learning/api-gateway build` |
-| Start Command | `corepack pnpm --filter @korean-learning/api-gateway start` |
+| Runtime | `Docker` |
+| Root Directory | `apps/api-gateway` |
 | Health Check Path | `/health` |
 
 Required environment variables:
