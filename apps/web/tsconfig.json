@@ -1,10 +1,15 @@
 ﻿// This file configures TypeScript for the Web Client.
+// Kept inside this folder so the Render image (context apps/web) can build without the repo root.
 {
-  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "jsx": "react-jsx",
+    "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
     "outDir": "dist"
   },
   "include": ["src"]

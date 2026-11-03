@@ -355,3 +355,8 @@ Format mỗi mục (do script tạo):
 - Trỏ web mặc định vào backend Render
 - Image web gọi https://kitsproject-study-tool.onrender.com khi không khai báo API_GATEWAY_URL khác
 ----------------------------------------
+
+--- Trần Quyền <2026-11-03 20:18>------
+- Sửa build web trên Render
+- tsconfig của web nằm trong apps/web nên Vite build được khi Root Directory là apps/web
+----------------------------------------
