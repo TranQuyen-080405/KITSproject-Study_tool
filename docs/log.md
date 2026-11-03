@@ -360,3 +360,13 @@ Format mỗi mục (do script tạo):
 - Sửa build web trên Render
 - tsconfig của web nằm trong apps/web nên Vite build được khi Root Directory là apps/web
 ----------------------------------------
+
+--- Trần Quyền <2026-11-03 20:26>------
+- Mở cổng gateway trước khi migrate
+- Render thấy cổng ngay khi deploy, không còn Bad Gateway trong lúc tạo database và seed
+----------------------------------------
+
+--- Trần Quyền <2026-11-03 20:31>------
+- Đưa biến LLM ra env của service gốc
+- Backend Render đọc LLM_API_KEY, LLM_MODEL và LLM_BASE_URL từ env của service, không lấy file .env trong ai-service
+----------------------------------------

@@ -1,5 +1,6 @@
 # Backend Render service. Leave Root Directory empty.
 # Starts the gateway, user, content, AI, and analytics. Web is a separate service.
+# Set POSTGRES_URL, LLM_API_KEY, LLM_MODEL, and LLM_BASE_URL on the service. See .env.example.
 FROM node:22-bookworm-slim
 
 WORKDIR /app

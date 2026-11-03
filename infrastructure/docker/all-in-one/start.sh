@@ -17,6 +17,9 @@ if [ -z "${USER_DATABASE_URL:-}" ] || [ -z "${CONTENT_DATABASE_URL:-}" ] || [ -z
 fi
 
 cd /app
+# Render shows Bad Gateway until $PORT accepts connections. Open it before the slow database work.
+PORT="$PUBLIC_PORT" pnpm --filter @korean-learning/api-gateway exec tsx src/index.ts &
+
 pnpm --filter @korean-learning/content-service db:deploy
 pnpm --filter @korean-learning/analytics-service db:deploy
 
@@ -27,12 +30,12 @@ cd /app/apps/user-service
 PORT=8000 /opt/venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000 &
 
 cd /app/apps/ai-service
+# LLM_PROVIDER, LLM_MODEL, LLM_API_KEY, and LLM_BASE_URL are the Render service env, not apps/ai-service/.env.
 /opt/venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 3004 &
 
 cd /app
 PORT=3001 pnpm --filter @korean-learning/content-service start &
 PORT=3003 pnpm --filter @korean-learning/analytics-service start &
-PORT="$PUBLIC_PORT" pnpm --filter @korean-learning/api-gateway exec tsx src/index.ts &
 
 trap 'kill 0' TERM INT
 wait
