@@ -20,7 +20,7 @@ cd /app
 pnpm --filter @korean-learning/content-service db:deploy
 pnpm --filter @korean-learning/analytics-service db:deploy
 
-(cd /app/apps/user-service && /opt/venv/bin/python scripts/seed_test_user.py)
+(cd /app/apps/user-service && PYTHONPATH=/app/apps/user-service /opt/venv/bin/python scripts/seed_test_user.py)
 pnpm exec tsx scripts/seed-test-month.ts
 
 cd /app/apps/user-service
