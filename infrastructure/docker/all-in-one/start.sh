@@ -21,7 +21,7 @@ pnpm --filter @korean-learning/content-service db:deploy
 pnpm --filter @korean-learning/analytics-service db:deploy
 
 (cd /app/apps/user-service && PYTHONPATH=/app/apps/user-service /opt/venv/bin/python scripts/seed_test_user.py)
-pnpm --filter @korean-learning/analytics-service exec tsx ../../scripts/seed-test-month.ts
+pnpm --filter @korean-learning/analytics-service exec tsx /app/scripts/seed-test-month.ts
 
 cd /app/apps/user-service
 PORT=8000 /opt/venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000 &

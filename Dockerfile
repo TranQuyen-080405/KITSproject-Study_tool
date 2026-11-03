@@ -12,6 +12,7 @@ RUN apt-get update \
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
 COPY apps ./apps
 COPY packages ./packages
+COPY scripts ./scripts
 COPY infrastructure/docker/all-in-one ./infrastructure/docker/all-in-one
 
 RUN corepack enable \
