@@ -330,3 +330,8 @@ Format mỗi mục (do script tạo):
 - Gộp Docker Compose về một Postgres
 - Một lệnh docker compose up ở gốc repo chạy cả app, mỗi service một database trên cùng server
 ----------------------------------------
+
+--- Trần Quyền <2026-11-03 19:04>------
+- Thêm Dockerfile gốc cho một service Render
+- Một image chạy web, gateway và các service, tự tạo bốn database trên một Postgres
+----------------------------------------
