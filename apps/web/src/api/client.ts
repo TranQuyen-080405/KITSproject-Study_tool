@@ -130,6 +130,10 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   }
   if (response.status === 204) return undefined as T;
   if (!response.ok) {
+    const type = response.headers.get("content-type") ?? "";
+    if (type.includes("text/html")) {
+      throw new ApiError("Không kết nối được máy chủ.", response.status);
+    }
     const { message, code } = await readErrorMessage(response, "Yêu cầu không thành công.");
     throw new ApiError(message, response.status, code);
   }

@@ -345,3 +345,13 @@ Format mỗi mục (do script tạo):
 - Tách web khỏi service Render tổng
 - Service gốc chỉ chạy gateway và các service backend, web deploy riêng và trỏ API về service đó
 ----------------------------------------
+
+--- Trần Quyền <2026-11-03 19:54>------
+- Sửa web proxy tới backend Render
+- Web lấy host từ API_GATEWAY_URL, không còn trỏ gateway demo nên đăng nhập nhận được JSON
+----------------------------------------
+
+--- Trần Quyền <2026-11-03 20:00>------
+- Trỏ web mặc định vào backend Render
+- Image web gọi https://kitsproject-study-tool.onrender.com khi không khai báo API_GATEWAY_URL khác
+----------------------------------------
