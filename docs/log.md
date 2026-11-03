@@ -340,3 +340,8 @@ Format mỗi mục (do script tạo):
 - Giữ tài khoản test và dữ liệu học khi deploy
 - Lần chạy đầu tạo nick test cùng bộ từ và lịch sử học, các lần deploy sau không ghi đè
 ----------------------------------------
+
+--- Trần Quyền <2026-11-03 19:36>------
+- Tách web khỏi service Render tổng
+- Service gốc chỉ chạy gateway và các service backend, web deploy riêng và trỏ API về service đó
+----------------------------------------

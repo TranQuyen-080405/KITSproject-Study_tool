@@ -8,10 +8,9 @@ RUN npm install --ignore-scripts
 
 COPY . .
 
+ARG GOOGLE_CLIENT_ID=
 ARG VITE_GOOGLE_CLIENT_ID=
-ENV VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
-
-RUN npx vite build
+RUN VITE_GOOGLE_CLIENT_ID="${VITE_GOOGLE_CLIENT_ID:-$GOOGLE_CLIENT_ID}" npx vite build
 
 FROM nginx:1.27-alpine
 
@@ -20,6 +19,8 @@ ENV API_GATEWAY_URL=https://kits-api-gateway-demo.onrender.com
 ENV API_GATEWAY_HOST=kits-api-gateway-demo.onrender.com
 
 COPY nginx.conf /etc/nginx/templates/default.conf.template
+COPY docker-entrypoint.d/25-gateway-host.sh /docker-entrypoint.d/25-gateway-host.sh
+RUN chmod +x /docker-entrypoint.d/25-gateway-host.sh
 COPY --from=build /app/dist /usr/share/nginx/html
 
 EXPOSE 80

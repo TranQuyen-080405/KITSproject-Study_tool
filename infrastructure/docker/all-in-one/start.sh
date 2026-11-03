@@ -21,7 +21,7 @@ pnpm --filter @korean-learning/content-service db:deploy
 pnpm --filter @korean-learning/analytics-service db:deploy
 
 (cd /app/apps/user-service && PYTHONPATH=/app/apps/user-service /opt/venv/bin/python scripts/seed_test_user.py)
-pnpm exec tsx scripts/seed-test-month.ts
+pnpm --filter @korean-learning/analytics-service exec tsx ../../scripts/seed-test-month.ts
 
 cd /app/apps/user-service
 PORT=8000 /opt/venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000 &
@@ -32,14 +32,7 @@ cd /app/apps/ai-service
 cd /app
 PORT=3001 pnpm --filter @korean-learning/content-service start &
 PORT=3003 pnpm --filter @korean-learning/analytics-service start &
-PORT=3000 pnpm --filter @korean-learning/api-gateway exec tsx src/index.ts &
-
-export PORT="$PUBLIC_PORT"
-export API_GATEWAY_URL="${API_GATEWAY_URL:-http://127.0.0.1:3000}"
-export API_GATEWAY_HOST="${API_GATEWAY_HOST:-127.0.0.1}"
-envsubst '${PORT} ${API_GATEWAY_URL} ${API_GATEWAY_HOST}' \
-  < /app/apps/web/nginx.conf > /etc/nginx/conf.d/default.conf
-rm -f /etc/nginx/sites-enabled/default
+PORT="$PUBLIC_PORT" pnpm --filter @korean-learning/api-gateway exec tsx src/index.ts &
 
 trap 'kill 0' TERM INT
-nginx -g 'daemon off;'
+wait
