@@ -1,4 +1,6 @@
-# This file defines the future local microservices development topology.
+# One command from the repo root starts the whole app:
+#   docker compose up --build
+# One Postgres server. Each service uses its own database on that server.
 services:
   api-gateway:
     build:
@@ -25,6 +27,10 @@ services:
       context: ./apps/web
       args:
         VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+    environment:
+      PORT: "80"
+      API_GATEWAY_URL: http://api-gateway:3000
+      API_GATEWAY_HOST: api-gateway
     ports:
       - "5173:80"
     depends_on:
@@ -39,7 +45,7 @@ services:
         required: false
     environment:
       # Overrides the localhost URL in apps/user-service/.env.
-      USER_DATABASE_URL: postgresql+psycopg://postgres:postgres@user-postgres:5432/user_service
+      USER_DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/user_service
       JWT_ISSUER: kits-user-service
       JWT_AUDIENCE: kits-services
       FRONTEND_URL: http://localhost:5173
@@ -61,7 +67,7 @@ services:
         "if [ \"$$SEED_TEST_USER\" = \"true\" ]; then python scripts/seed_test_user.py; fi && exec uvicorn app.main:app --host 0.0.0.0 --port 8000",
       ]
     depends_on:
-      user-postgres:
+      postgres:
         condition: service_healthy
       mailpit:
         condition: service_started
@@ -94,11 +100,11 @@ services:
       PORT: "3001"
       AI_SERVICE_URL: http://ai-service:3000
       USER_SERVICE_URL: http://user-service:8000
-      CONTENT_DATABASE_URL: postgresql://postgres:postgres@content-postgres:5432/content_service
+      CONTENT_DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/content_service
     ports:
       - "3001:3001"
     depends_on:
-      content-postgres:
+      postgres:
         condition: service_healthy
     healthcheck:
       test:
@@ -122,11 +128,11 @@ services:
     environment:
       USER_SERVICE_URL: http://user-service:8000
       # Overrides the localhost URL in apps/ai-service/.env. LLM_* and FRONTEND_ORIGIN stay in that file.
-      DATABASE_URL: postgresql+asyncpg://postgres:postgres@ai-postgres:5432/ai_service
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/ai_service
     ports:
       - "3004:3000"
     depends_on:
-      ai-postgres:
+      postgres:
         condition: service_healthy
     healthcheck:
       test:
@@ -163,14 +169,14 @@ services:
       PORT: "3003"
       USER_SERVICE_URL: http://user-service:8000
       ANALYTICS_DATA_FILE: /data/analytics.json
-      ANALYTICS_DATABASE_URL: postgresql://postgres:postgres@analytics-postgres:5432/analytics_service
+      ANALYTICS_DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/analytics_service
       RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
     ports:
       - "3003:3003"
     volumes:
       - analytics-data:/data
     depends_on:
-      analytics-postgres:
+      postgres:
         condition: service_healthy
       rabbitmq:
         condition: service_started
@@ -194,76 +200,24 @@ services:
       - "15672:15672"
     restart: unless-stopped
 
-  user-postgres:
+  postgres:
     image: postgres:17
     environment:
-      POSTGRES_DB: user_service
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: postgres
     ports:
-      - "5433:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
-      - user-postgres-data:/var/lib/postgresql/data
+      - postgres-data:/var/lib/postgresql/data
+      - ./infrastructure/docker/postgres/init-databases.sql:/docker-entrypoint-initdb.d/01-databases.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d user_service"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
-  content-postgres:
-    image: postgres:17
-    environment:
-      POSTGRES_DB: content_service
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5434:5432"
-    volumes:
-      - content-postgres-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d content_service"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-    restart: unless-stopped
-
-  ai-postgres:
-    image: postgres:17
-    environment:
-      POSTGRES_DB: ai_service
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5436:5432"
-    volumes:
-      - ai-postgres-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d ai_service"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-    restart: unless-stopped
-
-  analytics-postgres:
-    image: postgres:17
-    environment:
-      POSTGRES_DB: analytics_service
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5437:5432"
-    volumes:
-      - analytics-postgres-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d analytics_service"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d postgres"]
       interval: 5s
       timeout: 5s
       retries: 10
     restart: unless-stopped
 
 volumes:
-  user-postgres-data:
-  content-postgres-data:
-  ai-postgres-data:
-  analytics-postgres-data:
+  postgres-data:
   analytics-data:

@@ -325,3 +325,8 @@ Format mỗi mục (do script tạo):
 - Dockerfile của từng service build trong chính folder đó
 - Render chỉ cần Root Directory, không cần Dockerfile Path
 ----------------------------------------
+
+--- Trần Quyền <2026-11-03 18:53>------
+- Gộp Docker Compose về một Postgres
+- Một lệnh docker compose up ở gốc repo chạy cả app, mỗi service một database trên cùng server
+----------------------------------------
