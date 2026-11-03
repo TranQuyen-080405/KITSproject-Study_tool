@@ -20,9 +20,8 @@ cd /app
 pnpm --filter @korean-learning/content-service db:deploy
 pnpm --filter @korean-learning/analytics-service db:deploy
 
-if [ "${SEED_TEST_USER:-}" = "true" ]; then
-  (cd /app/apps/user-service && /opt/venv/bin/python scripts/seed_test_user.py)
-fi
+(cd /app/apps/user-service && /opt/venv/bin/python scripts/seed_test_user.py)
+pnpm exec tsx scripts/seed-test-month.ts
 
 cd /app/apps/user-service
 PORT=8000 /opt/venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000 &

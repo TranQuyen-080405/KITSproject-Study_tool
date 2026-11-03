@@ -335,3 +335,8 @@ Format mỗi mục (do script tạo):
 - Thêm Dockerfile gốc cho một service Render
 - Một image chạy web, gateway và các service, tự tạo bốn database trên một Postgres
 ----------------------------------------
+
+--- Trần Quyền <2026-11-03 19:19>------
+- Giữ tài khoản test và dữ liệu học khi deploy
+- Lần chạy đầu tạo nick test cùng bộ từ và lịch sử học, các lần deploy sau không ghi đè
+----------------------------------------

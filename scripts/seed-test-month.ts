@@ -4,9 +4,13 @@ import { scheduleReview, type ReviewRecord } from "../apps/analytics-service/src
 const require = createRequire(new URL("../apps/content-service/package.json", import.meta.url));
 const pg = require("pg") as typeof import("pg");
 
-const USER_ID = "1";
-const CONTENT_URL = "postgresql://postgres:postgres@localhost:5432/content_service";
-const ANALYTICS_URL = "postgresql://postgres:postgres@localhost:5432/analytics_service";
+function pgUrl(url: string): string {
+  return url.replace(/^postgres(?:ql)?(?:\+\w+)?:\/\//, "postgresql://");
+}
+
+const CONTENT_URL = pgUrl(process.env.CONTENT_DATABASE_URL || "postgresql://postgres:postgres@localhost:5432/content_service");
+const ANALYTICS_URL = pgUrl(process.env.ANALYTICS_DATABASE_URL || "postgresql://postgres:postgres@localhost:5432/analytics_service");
+const USER_URL = pgUrl(process.env.USER_DATABASE_URL || "postgresql://postgres:postgres@localhost:5432/user_service");
 
 type Entry = { front: string; back: string };
 type DeckSeed = { id: string; title: string; description: string; daysAgo: number; entries: Entry[] };
@@ -101,13 +105,35 @@ function streakFrom(days: number[]): { current: number; longest: number; last: s
   return { current, longest: Math.max(longest, current), last: dayKey(daysAgo(0)) };
 }
 
+async function testUserId(): Promise<string> {
+  const users = new pg.Client({ connectionString: USER_URL });
+  await users.connect();
+  try {
+    const found = await users.query(`SELECT id FROM users WHERE username = 'test'`);
+    const id = found.rows[0]?.id;
+    if (id === undefined || id === null) throw new Error("Test user does not exist yet");
+    return String(id);
+  } finally {
+    await users.end();
+  }
+}
+
 async function main() {
+  const userId = await testUserId();
   const content = new pg.Client({ connectionString: CONTENT_URL });
   const analytics = new pg.Client({ connectionString: ANALYTICS_URL });
   await content.connect();
   await analytics.connect();
   await content.query("SET TIME ZONE 'UTC'");
   await analytics.query("SET TIME ZONE 'UTC'");
+  const ready = await content.query(`SELECT count(*)::int AS n FROM "Flashcard" WHERE id LIKE 'test-month-%'`);
+  const reviews = await analytics.query(`SELECT count(*)::int AS n FROM "UserReview" WHERE id LIKE 'test-month-%'`);
+  if (ready.rows[0].n >= 10 && reviews.rows[0].n >= 80) {
+    console.log(JSON.stringify({ userId, kept: true, decks: ready.rows[0].n, reviews: reviews.rows[0].n }));
+    await content.end();
+    await analytics.end();
+    return;
+  }
   try {
     await content.query("BEGIN");
     const cards: Array<{ id: string; deckId: string; deckTitle: string; front: string; back: string; created: Date }> = [];
@@ -118,7 +144,7 @@ async function main() {
          VALUES ($1, $2, $3, $4, $5, $5)
          ON CONFLICT (id) DO UPDATE
          SET title = EXCLUDED.title, description = EXCLUDED.description, "userId" = EXCLUDED."userId", "createdAt" = EXCLUDED."createdAt", "updatedAt" = EXCLUDED."updatedAt"`,
-        [deck.id, deck.title, deck.description, USER_ID, utcStamp(created)],
+        [deck.id, deck.title, deck.description, userId, utcStamp(created)],
       );
       await content.query(`DELETE FROM "Question" WHERE "flashcardId" = $1`, [deck.id]);
       await content.query(`DELETE FROM "Card" WHERE "flashcardId" = $1`, [deck.id]);
@@ -135,11 +161,11 @@ async function main() {
     }
     await content.query(
       `UPDATE "Flashcard" SET "createdAt" = $1 WHERE id = $2 AND "userId" = $3`,
-      [utcStamp(daysAgo(27, 20)), "9b71608c-ad30-4e83-af4f-c6a6dfd014ee", USER_ID],
+      [utcStamp(daysAgo(27, 20)), "9b71608c-ad30-4e83-af4f-c6a6dfd014ee", userId],
     );
     await content.query(
       `UPDATE "Flashcard" SET "createdAt" = $1 WHERE id = $2 AND "userId" = $3`,
-      [utcStamp(daysAgo(15, 11)), "92f6e57d-89fa-4ca5-ab05-0480a7b85e90", USER_ID],
+      [utcStamp(daysAgo(15, 11)), "92f6e57d-89fa-4ca5-ab05-0480a7b85e90", userId],
     );
     await content.query("COMMIT");
 
@@ -162,7 +188,7 @@ async function main() {
             : [{ days: lastDays + 10, correct: true }, { days: lastDays + 6, correct: true }, { days: lastDays, correct: true }];
       for (const step of steps) {
         record = scheduleReview(record, {
-          userId: USER_ID,
+          userId,
           cardId: card.id,
           deckId: card.deckId,
           front: card.front,
@@ -192,7 +218,7 @@ async function main() {
            "lastResponseTimeMs" = EXCLUDED."lastResponseTimeMs", "averageResponseTimeMs" = EXCLUDED."averageResponseTimeMs",
            "updatedAt" = EXCLUDED."updatedAt"`,
         [
-          card.id, USER_ID, card.id, card.deckId, card.front, card.front, card.back, card.back, record.status,
+          card.id, userId, card.id, card.deckId, card.front, card.front, card.back, card.back, record.status,
           record.correctCount, record.incorrectCount, record.correctStreak, record.totalReviews, record.intervalDays, record.easeFactor,
           utcStamp(new Date(record.nextReviewAt)), utcStamp(new Date(record.lastReviewedAt)), record.lastResponseTimeMs ?? speed, record.averageResponseTimeMs ?? speed,
           utcStamp(card.created),
@@ -216,7 +242,7 @@ async function main() {
            "scorePercentage" = EXCLUDED."scorePercentage", "durationSeconds" = EXCLUDED."durationSeconds"`,
         [
           `test-month-session-${String(index + 1).padStart(2, "0")}`,
-          USER_ID,
+          userId,
           deck.id,
           deck.title,
           index % 3 === 0 ? "daily_review" : "deck_study",
@@ -238,11 +264,11 @@ async function main() {
          "longestStreak" = GREATEST("UserStreak"."longestStreak", EXCLUDED."longestStreak"),
          "lastStudiedDate" = EXCLUDED."lastStudiedDate",
          "updatedAt" = NOW()`,
-      [USER_ID, streak.current, streak.longest, streak.last],
+      [userId, streak.current, streak.longest, streak.last],
     );
     await analytics.query("COMMIT");
     console.log(JSON.stringify({
-      userId: USER_ID,
+      userId,
       decks: decks.length,
       cards: cards.length,
       sessions: days.length,

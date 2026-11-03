@@ -14,10 +14,10 @@ const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? "";
 
 export function LoginPage({ onLogin }: LoginPageProps) {
   const [mode, setMode] = useState<AuthMode>("login");
-  const [username, setUsername] = useState("");
+  const [username, setUsername] = useState("test");
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
-  const [password, setPassword] = useState("");
+  const [password, setPassword] = useState("test1234");
   const [newPassword, setNewPassword] = useState("");
   const [code, setCode] = useState("");
   const [showPassword, setShowPassword] = useState(false);
