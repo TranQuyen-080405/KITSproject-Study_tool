@@ -33,13 +33,21 @@ export type AnalyticsDashboard = {
   learning: number;
   mastered: number;
   accuracy: number;
+  correctAnswers?: number;
+  totalAnswers?: number;
   streakDays?: number;
+  longestStreak?: number;
   averageResponseTimeMs?: number;
   totalSessions?: number;
   recentSessions?: StudySession[];
   activityByDate?: Record<string, number>;
   strugglingWords?: StrugglingWord[];
   nextReviewAt: string | null;
+  learnedWords?: Array<{
+    word: string;
+    translation?: string;
+    status: "new" | "learning" | "mastered" | string;
+  }>;
   reviews?: Array<{
     word: string;
     translation?: string;

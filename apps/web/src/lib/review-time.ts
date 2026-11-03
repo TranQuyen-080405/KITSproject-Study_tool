@@ -1,5 +1,6 @@
 export function getWaitRemainingMs(nextReviewAt: string, now = Date.now()): number {
-  return Math.max(0, new Date(nextReviewAt).getTime() - now);
+  const timestamp = new Date(nextReviewAt).getTime();
+  return Number.isFinite(timestamp) ? Math.max(0, timestamp - now) : Number.POSITIVE_INFINITY;
 }
 
 export function isReviewDue(nextReviewAt: string, now = Date.now()): boolean {
@@ -8,7 +9,8 @@ export function isReviewDue(nextReviewAt: string, now = Date.now()): boolean {
 
 export function formatWaitRemaining(nextReviewAt: string, now = Date.now()): string {
   const ms = getWaitRemainingMs(nextReviewAt, now);
-  if (ms === 0) return "Đến hạn";
+  if (!Number.isFinite(ms)) return "Chưa có lịch ôn";
+  if (ms === 0) return "Đến lượt";
 
   const minutes = Math.ceil(ms / 60_000);
   if (minutes < 60) return `Còn ${minutes} phút`;

@@ -1,13 +1,5 @@
 import { defineConfig } from "prisma/config";
-
-function normalizeDbUrl(url: string | undefined): string {
-  if (!url) {
-    return "postgresql://content_user:KITS2026@localhost:5432/content_service";
-  }
-  return url
-    .replace("postgresql+asyncpg://", "postgresql://")
-    .replace("postgresql+psycopg://", "postgresql://");
-}
+import { config } from "./src/config/index.ts";
 
 export default defineConfig({
   schema: "prisma/schema.prisma",
@@ -16,6 +8,6 @@ export default defineConfig({
     seed: "tsx prisma/seed.ts",
   },
   datasource: {
-    url: normalizeDbUrl(process.env.CONTENT_DATABASE_URL ?? process.env.DATABASE_URL),
+    url: config.databaseUrl,
   },
 });

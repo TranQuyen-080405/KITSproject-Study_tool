@@ -15,6 +15,15 @@ describe("loadConfig", () => {
 
     expect(loadConfig()).toEqual({
       port: 3000,
+      corsOrigins: [
+        "http://localhost",
+        "http://localhost:5173",
+        "http://localhost:8081",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:8081",
+        "https://localhost",
+        "capacitor://localhost",
+      ],
       services: {
         user: "http://localhost:8001",
         content: "http://localhost:3001",
@@ -27,6 +36,7 @@ describe("loadConfig", () => {
   test("uses environment overrides", async () => {
     process.env = {
       PORT: "4000",
+      CORS_ORIGINS: "https://localhost, https://app.example",
       USER_SERVICE_URL: "http://user.example",
       CONTENT_SERVICE_URL: "http://content.example",
       ANALYTICS_SERVICE_URL: "http://analytics.example",
@@ -37,6 +47,7 @@ describe("loadConfig", () => {
 
     expect(loadConfig()).toEqual({
       port: 4000,
+      corsOrigins: ["https://localhost", "https://app.example"],
       services: {
         user: "http://user.example",
         content: "http://content.example",

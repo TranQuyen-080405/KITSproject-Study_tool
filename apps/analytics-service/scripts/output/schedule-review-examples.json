@@ -1,0 +1,248 @@
+{
+  "timezone": "Asia/Ho_Chi_Minh",
+  "scenarios": [
+    {
+      "title": "Nhánh thuộc",
+      "word": "사과",
+      "steps": [
+        {
+          "input": {
+            "when": "02/11/2026 08:00",
+            "answer": "đúng",
+            "seconds": 4.8,
+            "note": "Lần 1, đúng nhưng chậm"
+          },
+          "output": {
+            "n": 1,
+            "intervalDays": 1,
+            "easeFactor": 2.55,
+            "status": "learning",
+            "nextReviewAt": "03/11 08:00"
+          }
+        },
+        {
+          "input": {
+            "when": "03/11/2026 08:12",
+            "answer": "đúng",
+            "seconds": 1.6,
+            "note": "Đúng hẹn 1 ngày, trả lời nhanh"
+          },
+          "output": {
+            "n": 2,
+            "intervalDays": 3,
+            "easeFactor": 2.63,
+            "status": "learning",
+            "nextReviewAt": "06/11 08:12"
+          }
+        },
+        {
+          "input": {
+            "when": "06/11/2026 09:05",
+            "answer": "đúng",
+            "seconds": 0.9,
+            "note": "Đúng hẹn 3 ngày, trả lời nhanh"
+          },
+          "output": {
+            "n": 3,
+            "intervalDays": 8,
+            "easeFactor": 2.71,
+            "status": "mastered",
+            "nextReviewAt": "14/11 09:05"
+          }
+        },
+        {
+          "input": {
+            "when": "14/11/2026 19:40",
+            "answer": "đúng",
+            "seconds": 2.1,
+            "note": "Ôn lại đúng hẹn, vẫn nhanh"
+          },
+          "output": {
+            "n": 4,
+            "intervalDays": 22,
+            "easeFactor": 2.79,
+            "status": "mastered",
+            "nextReviewAt": "06/12 19:40"
+          }
+        }
+      ]
+    },
+    {
+      "title": "Nhánh không thuộc",
+      "word": "레몬",
+      "steps": [
+        {
+          "input": {
+            "when": "02/11/2026 08:05",
+            "answer": "sai",
+            "seconds": 6.2,
+            "note": "Gặp lần đầu, sai"
+          },
+          "output": {
+            "n": 0,
+            "intervalDays": 0,
+            "easeFactor": 2.3,
+            "status": "learning",
+            "nextReviewAt": "02/11 08:15"
+          }
+        },
+        {
+          "input": {
+            "when": "02/11/2026 08:16",
+            "answer": "đúng",
+            "seconds": 3.5,
+            "note": "Ôn lại sau 10 phút, đúng chậm"
+          },
+          "output": {
+            "n": 1,
+            "intervalDays": 1,
+            "easeFactor": 2.35,
+            "status": "learning",
+            "nextReviewAt": "03/11 08:16"
+          }
+        },
+        {
+          "input": {
+            "when": "03/11/2026 08:20",
+            "answer": "sai",
+            "seconds": 5.1,
+            "note": "Hôm sau vẫn sai"
+          },
+          "output": {
+            "n": 0,
+            "intervalDays": 0,
+            "easeFactor": 2.15,
+            "status": "learning",
+            "nextReviewAt": "03/11 08:30"
+          }
+        },
+        {
+          "input": {
+            "when": "03/11/2026 08:31",
+            "answer": "đúng",
+            "seconds": 2.8,
+            "note": "Ôn lại sau 10 phút, đúng nhưng chậm"
+          },
+          "output": {
+            "n": 1,
+            "intervalDays": 1,
+            "easeFactor": 2.2,
+            "status": "learning",
+            "nextReviewAt": "04/11 08:31"
+          }
+        },
+        {
+          "input": {
+            "when": "04/11/2026 07:50",
+            "answer": "đúng",
+            "seconds": 1.4,
+            "note": "Hôm sau đúng và nhanh"
+          },
+          "output": {
+            "n": 2,
+            "intervalDays": 3,
+            "easeFactor": 2.28,
+            "status": "learning",
+            "nextReviewAt": "07/11 07:50"
+          }
+        }
+      ]
+    },
+    {
+      "title": "Nhánh người học thật",
+      "word": "바나나",
+      "steps": [
+        {
+          "input": {
+            "when": "02/11/2026 20:10",
+            "answer": "đúng",
+            "seconds": 5.2,
+            "note": "Tối thứ Hai, đoán đúng nhưng do dự"
+          },
+          "output": {
+            "n": 1,
+            "intervalDays": 1,
+            "easeFactor": 2.55,
+            "status": "learning",
+            "nextReviewAt": "03/11 20:10"
+          }
+        },
+        {
+          "input": {
+            "when": "03/11/2026 20:05",
+            "answer": "đúng",
+            "seconds": 1.1,
+            "note": "Tối hôm sau, nhớ ngay"
+          },
+          "output": {
+            "n": 2,
+            "intervalDays": 3,
+            "easeFactor": 2.63,
+            "status": "learning",
+            "nextReviewAt": "06/11 20:05"
+          }
+        },
+        {
+          "input": {
+            "when": "06/11/2026 21:15",
+            "answer": "sai",
+            "seconds": 8,
+            "note": "Đến hạn 3 ngày nhưng quên"
+          },
+          "output": {
+            "n": 0,
+            "intervalDays": 0,
+            "easeFactor": 2.43,
+            "status": "learning",
+            "nextReviewAt": "06/11 21:25"
+          }
+        },
+        {
+          "input": {
+            "when": "06/11/2026 21:26",
+            "answer": "đúng",
+            "seconds": 3.6,
+            "note": "Xem lại rồi trả lời đúng, chậm"
+          },
+          "output": {
+            "n": 1,
+            "intervalDays": 1,
+            "easeFactor": 2.48,
+            "status": "learning",
+            "nextReviewAt": "07/11 21:26"
+          }
+        },
+        {
+          "input": {
+            "when": "07/11/2026 18:40",
+            "answer": "đúng",
+            "seconds": 1.7,
+            "note": "Chiều hôm sau, trả lời nhanh"
+          },
+          "output": {
+            "n": 2,
+            "intervalDays": 3,
+            "easeFactor": 2.56,
+            "status": "learning",
+            "nextReviewAt": "10/11 18:40"
+          }
+        },
+        {
+          "input": {
+            "when": "10/11/2026 19:05",
+            "answer": "đúng",
+            "seconds": 2.2,
+            "note": "Đúng hẹn, vẫn nhanh, lên mastered"
+          },
+          "output": {
+            "n": 3,
+            "intervalDays": 8,
+            "easeFactor": 2.64,
+            "status": "mastered",
+            "nextReviewAt": "18/11 19:05"
+          }
+        }
+      ]
+    }
+  ]
+}

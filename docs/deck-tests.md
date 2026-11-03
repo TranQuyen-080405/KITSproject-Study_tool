@@ -82,7 +82,7 @@ không đổi điểm/thời điểm hoàn thành. Backend bỏ qua điểm do t
 
 Kiểm thử AI dùng dữ liệu giả để không phát sinh yêu cầu trả phí.
 
-Chạy bộ tích hợp PostgreSQL riêng (tự đọc CONTENT_DATABASE_URL trong .env ở root nếu chưa có biến môi trường):
+Chạy bộ tích hợp PostgreSQL riêng (tự đọc CONTENT_DATABASE_URL trong `apps/content-service/.env` nếu chưa có biến môi trường):
 
 ```powershell
 node apps/content-service/tests/scripts/run-deck-tests-integration.mjs

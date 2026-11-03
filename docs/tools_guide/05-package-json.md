@@ -8,7 +8,7 @@
 
 - Root: script chung (`typecheck`, `test`) và khai báo pnpm  
 - Từng service: dependency `express`, script `dev` / `typecheck` / `test`  
-- Web/mobile: dependency React / Expo  
+- Web: React/Vite; mobile shell: Capacitor Android  
 
 Không có `package.json` thì pnpm không biết cài gì và chạy script nào.
 

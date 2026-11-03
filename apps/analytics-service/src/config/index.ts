@@ -17,7 +17,6 @@ function envFile(filename: string): Record<string, string> {
   }
 }
 const local = envFile(path.join(serviceRoot, ".env"));
-const root = envFile(path.resolve(serviceRoot, "../../.env"));
 const port = Number.parseInt(process.env.PORT ?? "3003", 10);
 
 export function normalizeDatabaseUrl(url: string): string {
@@ -31,9 +30,8 @@ export function normalizeDatabaseUrl(url: string): string {
 
 export const config = {
   port: Number.isFinite(port) ? port : 3003,
-  // Never inherit the root DATABASE_URL: in this workspace that belongs to AI.
   databaseUrl: normalizeDatabaseUrl(
-    process.env.ANALYTICS_DATABASE_URL || root.ANALYTICS_DATABASE_URL ||
+    process.env.ANALYTICS_DATABASE_URL ||
     local.ANALYTICS_DATABASE_URL || local.DATABASE_URL ||
     "postgresql://postgres:postgres@localhost:5432/analytics_service",
   ),

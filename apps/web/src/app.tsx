@@ -1,15 +1,21 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { App as CapacitorApp } from "@capacitor/app";
 import bg1 from "../../../assets/images/background-1.jpg";
 import bg2 from "../../../assets/images/background-2.jpg";
 import bg3 from "../../../assets/images/background-3.jpg";
+import type { StrugglingWord } from "./api/analytics-api";
 import { AppPage } from "./components/app-sidebar";
 import { ChatbotPage } from "./pages/chatbot-page";
+import { ReviewActionsContext } from "./components/review-bell";
 import { DashboardPage } from "./pages/dashboard-page";
-import { VocabReviewPage } from "./pages/vocab-review-page";
+import { StudySchedulePage } from "./pages/study-schedule-page";
+import { VocabReviewPage, type DailyReviewCard } from "./pages/vocab-review-page";
 import { FlashcardsPage } from "./pages/flashcards-page";
 import { FlashcardDetailPage } from "./pages/flashcard-detail-page";
 import { FlashcardStudyPage } from "./pages/flashcard-study-page";
 import { LoginPage } from "./pages/login-page";
+import { clearSession, loadSession, saveSession } from "./lib/session-storage";
+import { isNativeAndroid } from "./lib/runtime";
 import { authService } from "./services/auth.service";
 import type { Account } from "./types/auth";
 import "./styles/app.css";
@@ -22,6 +28,7 @@ function parseInitialRoute(): { page: AppPage; deckId?: string } {
   const reservedRoutes: AppPage[] = [
     "chatbot",
     "dashboard",
+    "schedule",
     "manage-content",
     "flashcards",
     "flashcard-detail",
@@ -56,6 +63,7 @@ function parseInitialRoute(): { page: AppPage; deckId?: string } {
     "result",
     "manage-content",
     "dashboard",
+    "schedule",
     "chatbot",
     "review",
   ];
@@ -71,8 +79,8 @@ export function App() {
     document.documentElement.style.setProperty("--bg-image-2", `url('${bg2}')`);
     document.documentElement.style.setProperty("--bg-image-3", `url('${bg3}')`);
 
-    // Lock Global Dark Theme & Liquid Glass Properties
     document.documentElement.dataset.theme = "dark";
+    localStorage.setItem("haru-theme", "dark");
     document.body.dataset.background = localStorage.getItem("haru-bg") || "background-1";
     document.documentElement.style.setProperty("--glass-opacity-val", "0.50");
     document.documentElement.style.setProperty("--glass-blur-val", "6px");
@@ -100,21 +108,16 @@ export function App() {
     };
   }, []);
 
-  const [account, setAccount] = useState<Account | undefined>(() => {
-    const stored = localStorage.getItem("haru-account");
-    if (!stored) return undefined;
-    try {
-      const parsed = JSON.parse(stored) as Partial<Account>;
-      if (typeof parsed.accessToken !== "string" || typeof parsed.id !== "number") {
-        localStorage.removeItem("haru-account");
-        return undefined;
-      }
-      return parsed as Account;
-    } catch {
-      localStorage.removeItem("haru-account");
-      return undefined;
-    }
-  });
+  const [account, setAccount] = useState<Account>();
+  const [isSessionLoading, setIsSessionLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    void loadSession()
+      .then((stored) => { if (active) setAccount(stored); })
+      .finally(() => { if (active) setIsSessionLoading(false); });
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     const updateSession = (event: Event) => setAccount((event as CustomEvent<Account | undefined>).detail);
@@ -128,6 +131,8 @@ export function App() {
     return initialRoute.deckId || localStorage.getItem("haru-selected-deck-id") || undefined;
   });
   const [startDeckTest, setStartDeckTest] = useState(false);
+  const [reviewItems, setReviewItems] = useState<DailyReviewCard[]>();
+  const [reviewExtras, setReviewExtras] = useState<DailyReviewCard[]>();
   const [deckDetailTab, setDeckDetailTab] = useState<"cards" | "tests">(() =>
     new URLSearchParams(window.location.search).get("tab") === "tests" ? "tests" : "cards");
 
@@ -143,6 +148,27 @@ export function App() {
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
+
+  useEffect(() => {
+    if (!isNativeAndroid) return;
+    let disposed = false;
+    let removeListener: (() => Promise<void>) | undefined;
+    void CapacitorApp.addListener("backButton", ({ canGoBack }) => {
+      if (activePage !== "flashcards") {
+        if (canGoBack) window.history.back();
+        else setActivePage("flashcards");
+        return;
+      }
+      void CapacitorApp.minimizeApp();
+    }).then((listener) => {
+      if (disposed) void listener.remove();
+      else removeListener = () => listener.remove();
+    });
+    return () => {
+      disposed = true;
+      if (removeListener) void removeListener();
+    };
+  }, [activePage]);
 
   function setActivePage(page: AppPage) {
     localStorage.setItem("haru-active-page", page);
@@ -176,7 +202,7 @@ export function App() {
   }
 
   function saveAccount(user: Account) {
-    localStorage.setItem("haru-account", JSON.stringify(user));
+    void saveSession(user);
     setAccount(user);
   }
 
@@ -186,11 +212,15 @@ export function App() {
     } catch {
       // Local logout still proceeds if the gateway/user-service is offline.
     }
-    localStorage.removeItem("haru-account");
+    await clearSession();
     localStorage.removeItem("haru-active-page");
     localStorage.removeItem("haru-selected-lesson-id");
     localStorage.removeItem("haru-selected-deck-id");
     setAccount(undefined);
+  }
+
+  if (isSessionLoading) {
+    return <div className="login-page"><p className="page-status">Đang khôi phục phiên đăng nhập...</p></div>;
   }
 
   if (!account) {
@@ -199,18 +229,46 @@ export function App() {
 
   const handleLogout = () => void clearAccount();
 
+  const startReview = (items: StrugglingWord[], extras: StrugglingWord[] = []) => {
+    const toCard = (item: StrugglingWord): DailyReviewCard => ({
+      cardId: item.cardId,
+      word: item.word,
+      translation: item.translation ?? "",
+      status: item.status,
+      easeFactor: item.easeFactor,
+    });
+    setReviewItems(items.map(toCard));
+    setReviewExtras(extras.map(toCard));
+    setActivePage("review");
+  };
+
+  let page: ReactNode;
   if (activePage === "chatbot") {
-    return <ChatbotPage account={account} onLogout={handleLogout} onNavigate={setActivePage} userId={account.id} />;
-  }
-  if (activePage === "dashboard") {
-    return <DashboardPage account={account} onLogout={handleLogout} onNavigate={setActivePage} token={account.accessToken} />;
-  }
-  if (activePage === "manage-content") {
+    page = <ChatbotPage account={account} onLogout={handleLogout} onNavigate={setActivePage} userId={account.id} />;
+  } else if (activePage === "dashboard") {
+    page = (
+      <DashboardPage
+        account={account}
+        onLogout={handleLogout}
+        onNavigate={setActivePage}
+        token={account.accessToken}
+      />
+    );
+  } else if (activePage === "schedule") {
+    page = (
+      <StudySchedulePage
+        account={account}
+        onLogout={handleLogout}
+        onNavigate={setActivePage}
+        onStartReview={startReview}
+        token={account.accessToken}
+      />
+    );
+  } else if (activePage === "manage-content") {
     setActivePage("flashcards");
-    return null;
-  }
-  if (activePage === "flashcards") {
-    return (
+    page = null;
+  } else if (activePage === "flashcards") {
+    page = (
       <FlashcardsPage
         account={account}
         onLogout={handleLogout}
@@ -223,9 +281,8 @@ export function App() {
         onStartMcq={(deckId) => handleSelectDeck(deckId, "tests")}
       />
     );
-  }
-  if (["flashcard-detail", "mcq", "result"].includes(activePage) && selectedDeckId) {
-    return (
+  } else if (["flashcard-detail", "mcq", "result"].includes(activePage) && selectedDeckId) {
+    page = (
       <FlashcardDetailPage
         account={account}
         deckId={selectedDeckId}
@@ -243,9 +300,8 @@ export function App() {
         }}
       />
     );
-  }
-  if (activePage === "flashcard-study" && selectedDeckId) {
-    return (
+  } else if (activePage === "flashcard-study" && selectedDeckId) {
+    page = (
       <FlashcardStudyPage
         account={account}
         deckId={selectedDeckId}
@@ -254,23 +310,23 @@ export function App() {
         onNavigate={setActivePage}
       />
     );
-  }
-
-  if (activePage === "review") {
-    return (
+  } else if (activePage === "review") {
+    page = (
       <VocabReviewPage
         account={account}
+        extras={reviewExtras}
+        items={reviewItems}
         token={account.accessToken}
         onComplete={() => {
-          setActivePage("dashboard");
+          setReviewItems(undefined);
+          setReviewExtras(undefined);
+          setActivePage("schedule");
         }}
         onLogout={handleLogout}
         onNavigate={setActivePage}
       />
     );
-  }
-
-  return (
+  } else page = (
     <FlashcardsPage
       account={account}
       onLogout={handleLogout}
@@ -282,5 +338,19 @@ export function App() {
       }}
       onStartMcq={(deckId) => handleSelectDeck(deckId, "tests")}
     />
+  );
+
+  return (
+    <ReviewActionsContext.Provider
+      value={{
+        token: account.accessToken,
+        accountId: account.id,
+        refreshKey: activePage,
+        startReview,
+        openSchedule: () => setActivePage("schedule"),
+      }}
+    >
+      {page}
+    </ReviewActionsContext.Provider>
   );
 }

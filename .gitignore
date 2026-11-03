@@ -1,7 +1,6 @@
 # This file excludes generated local dependencies, builds, logs, and secrets.
 node_modules/
 dist/
-.expo/
 .env
 .env.local
 *.log
@@ -11,6 +10,4 @@ __pycache__/
 .pytest_cache/
 .venv/
 .run-logs/
-apps/mobile/android/
 apps/mobile/ios/
-apps/mobile/dist-web/

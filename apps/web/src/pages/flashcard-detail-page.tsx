@@ -528,7 +528,7 @@ export function FlashcardDetailPage({
                   gap: "16px",
                 }}
               >
-                <div style={{ flex: "1 1 340px" }}>
+                <div className="flashcard-detail-summary" style={{ flex: "1 1 340px" }}>
                   <div
                     style={{
                       display: "flex",

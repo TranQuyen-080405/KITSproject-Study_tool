@@ -1,6 +1,7 @@
 // Auth operations against User Service through the API Gateway.
 import { apiRequest } from "../api/client";
 import { endpoints } from "../api/endpoints";
+import { sessionSnapshot } from "../lib/session-storage";
 import type {
   Account,
   AuthSessionResponse,
@@ -20,6 +21,7 @@ function toAccount(session: AuthSessionResponse): Account {
   return {
     ...session.user,
     accessToken: session.accessToken,
+    refreshToken: session.refreshToken,
   };
 }
 
@@ -70,7 +72,12 @@ export const authService = {
   },
 
   async logout(): Promise<void> {
-    await apiRequest<void>(endpoints.auth.logout, { method: "POST", body: {} });
+    await apiRequest<void>(endpoints.auth.logout, {
+      method: "POST",
+      body: sessionSnapshot()?.refreshToken
+        ? { refreshToken: sessionSnapshot()?.refreshToken }
+        : {},
+    });
   },
 
   async getMe(accessToken: string): Promise<AuthUser> {

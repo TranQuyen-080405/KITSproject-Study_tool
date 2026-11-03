@@ -8,6 +8,7 @@ const webRoot = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(webRoot, "../..");
 
 export default defineConfig({
+  base: "./",
   plugins: [react()],
   server: {
     host: true,

@@ -2,32 +2,24 @@
   "name": "@korean-learning/mobile",
   "version": "0.1.0",
   "private": true,
-  "main": "index.ts",
+  "type": "module",
   "scripts": {
-    "start": "expo start",
-    "android": "expo run:android",
-    "web": "expo start --web",
-    "export:android": "expo export --platform android",
-    "export:web": "expo export --platform web --output-dir dist-web",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "build:web": "corepack pnpm --filter @korean-learning/web build",
+    "sync": "corepack pnpm run build:web && cap sync android",
+    "copy": "cap copy android",
+    "open:android": "cap open android",
+    "run:android": "cap run android",
+    "android": "corepack pnpm run sync && cap run android"
   },
   "dependencies": {
-    "@expo/metro-runtime": "~5.0.5",
-    "@react-native-google-signin/google-signin": "^16.0.0",
-    "expo": "~53.0.27",
-    "expo-build-properties": "~0.14.8",
-    "expo-dev-client": "~5.2.4",
-    "expo-secure-store": "~14.2.4",
-    "react": "19.0.0",
-    "react-dom": "19.0.0",
-    "react-native": "0.79.6",
-    "react-native-web": "^0.20.0"
+    "@aparajita/capacitor-secure-storage": "7.1.6",
+    "@capacitor/android": "7.6.9",
+    "@capacitor/app": "7.1.2",
+    "@capacitor/core": "7.6.9"
   },
   "devDependencies": {
-    "@testing-library/react": "^16.3.0",
-    "@types/react": "~19.0.10",
-    "@types/react-dom": "~19.0.6",
-    "jsdom": "^26.1.0"
+    "@capacitor/cli": "7.6.9",
+    "@types/node": "^22.15.3"
   }
 }

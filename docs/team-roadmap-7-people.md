@@ -76,12 +76,12 @@ Mobile, AI generation và RabbitMQ analytics là milestone tiếp theo, chỉ b�
 ### 3. Mobile Engineer
 
 **Làm trong code**
-- Tuần 1–8: chuẩn hóa Expo app shell, navigation plan, design parity và reusable UI primitive trong `apps/mobile/`.
+- Tuần 1–8: chuẩn hóa Capacitor Android shell, navigation plan và responsive parity từ `apps/web`.
 - Tuần 9–11: triển khai auth, danh sách set và study flow dựa trên contract Web đã ổn định.
 
 **Làm ngoài code**
 - Review contract từ góc nhìn mobile network/offline/loading state.
-- Demo trên thiết bị hoặc Expo Go ở tuần 11.
+- Demo APK Capacitor trên Android emulator hoặc thiết bị ở tuần 11.
 - Ghi rõ phần nào chưa đạt parity với Web MVP.
 
 **Deliverables**
@@ -181,7 +181,7 @@ Mobile, AI generation và RabbitMQ analytics là milestone tiếp theo, chỉ b�
 | Tuần 6–7 | Learning vertical slice: chọn card → học → thuộc/chưa thuộc → review/progress | Learning + Web | SRS v1 test; integration demo; xác nhận Content vẫn là card data owner |
 | Tuần 8 | Web MVP quality gate | Cả team, Tech Lead điều phối | E2E demo, test/typecheck, runbook, docs, known-issues list; freeze core scope |
 | Tuần 9–10 | AI và event analytics foundation | Content/AI + Learning + Platform | AI output validation/timeout; `StudyCompleted` contract; Analytics consumer idempotent |
-| Tuần 11 | Mobile first flow + dashboard | Mobile + Platform + Web | Expo demo auth→study; dashboard đọc Analytics API qua Gateway |
+| Tuần 11 | Mobile first flow + dashboard | Mobile + Platform + Web | Capacitor demo auth→study; dashboard đọc Analytics API qua Gateway |
 | Tuần 12 | Hardening, final demo, retrospective | Cả team | Security/error review, contract compatibility, Docker walkthrough, final docs and demo recording |
 
 ### Critical path

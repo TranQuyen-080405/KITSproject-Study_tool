@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { ArrowLeftIcon2D, EyeIcon2D, EyeOffIcon2D, GoogleLogo2D } from "../components/icons";
+import { isNativeAndroid } from "../lib/runtime";
 import { authService } from "../services/auth.service";
 import type { Account } from "../types/auth";
 import "../styles/app.css";
@@ -28,10 +29,18 @@ export function LoginPage({ onLogin }: LoginPageProps) {
   onLoginRef.current = onLogin;
 
   useEffect(() => {
-    if (mode !== "login" || !GOOGLE_CLIENT_ID) return;
+    if (mode !== "login" || !GOOGLE_CLIENT_ID || isNativeAndroid) return;
 
     let cancelled = false;
     let attempts = 0;
+    if (!window.google?.accounts?.id && !document.querySelector("script[data-google-identity]")) {
+      const script = document.createElement("script");
+      script.src = "https://accounts.google.com/gsi/client";
+      script.async = true;
+      script.defer = true;
+      script.dataset.googleIdentity = "true";
+      document.head.appendChild(script);
+    }
 
     const render = () => {
       if (cancelled || !googleButton.current) return;
@@ -88,8 +97,21 @@ export function LoginPage({ onLogin }: LoginPageProps) {
     }
   }
 
+  function incompleteReason(): string {
+    if (mode === "register" && password.length < 8) return "Mật khẩu cần ít nhất 8 ký tự.";
+    if (mode === "reset" && newPassword.length < 8) return "Mật khẩu mới cần ít nhất 8 ký tự.";
+    if ((mode === "verify-email" || mode === "reset") && code.trim().length !== 6) return "Nhập đủ mã OTP 6 chữ số.";
+    return "";
+  }
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const reason = incompleteReason();
+    if (reason) {
+      setError(reason);
+      setInfo("");
+      return;
+    }
     setIsSubmitting(true);
     setError("");
     setInfo("");
@@ -110,7 +132,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
         sessionStorage.setItem("kits_pending_email", email);
         setPassword("");
         switchMode("verify-email");
-        setInfo("Đăng ký thành công! Nhập mã OTP 6 chữ số đã gửi tới email.");
+        setInfo("Đăng ký thành công!\nNhập mã OTP 6 chữ số đã gửi tới email.");
         return;
       }
 
@@ -141,17 +163,6 @@ export function LoginPage({ onLogin }: LoginPageProps) {
       setIsSubmitting(false);
     }
   }
-
-  const canSubmit =
-    mode === "login"
-      ? Boolean(username.trim() && password)
-      : mode === "register"
-        ? Boolean(username.trim() && email.trim() && password.length >= 8)
-        : mode === "verify-email"
-          ? Boolean(email.trim() && code.trim().length === 6)
-          : mode === "forgot"
-            ? Boolean(email.trim())
-            : Boolean(email.trim() && code.trim().length === 6 && newPassword.length >= 8);
 
   return (
     <main className="login-page">
@@ -237,7 +248,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
               aria-label="Mật khẩu"
               autoComplete={mode === "login" ? "current-password" : "new-password"}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Mật khẩu"
+              placeholder={mode === "register" ? "Mật khẩu, ít nhất 8 ký tự" : "Mật khẩu"}
               required
               style={{ paddingRight: "36px" }}
               type={showPassword ? "text" : "password"}
@@ -308,7 +319,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
 
         <button
           className="login-primary-button interactive-element"
-          disabled={isSubmitting || !canSubmit}
+          disabled={isSubmitting}
           style={{ padding: "8px 14px", marginTop: "4px" }}
           type="submit"
         >
@@ -341,7 +352,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
               <div style={{ flex: 1, height: "1px", background: "var(--border-glass)" }} />
             </div>
 
-            {GOOGLE_CLIENT_ID ? (
+            {GOOGLE_CLIENT_ID && !isNativeAndroid ? (
               <div aria-label="Đăng nhập bằng Google" ref={googleButton} style={{ display: "flex", justifyContent: "center" }} />
             ) : (
               <button

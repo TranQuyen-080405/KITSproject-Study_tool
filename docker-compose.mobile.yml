@@ -19,11 +19,11 @@ services:
     build:
       context: .
       dockerfile: apps/user-service/Dockerfile
+    env_file:
+      - path: ./apps/user-service/.env
+        required: false
     environment:
       USER_DATABASE_URL: postgresql+psycopg://postgres:postgres@user-postgres:5432/user_service
-      JWT_SECRET: ${USER_JWT_SECRET:-mobile-local-development-secret}
-      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
-      ADMIN_EMAILS: ${USER_ADMIN_EMAILS:-admin@example.com}
       FRONTEND_URL: http://localhost:8081
       SMTP_HOST: mailpit
       SMTP_PORT: "1025"

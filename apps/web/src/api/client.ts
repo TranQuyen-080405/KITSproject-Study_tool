@@ -1,4 +1,7 @@
 // Shared HTTP client for Gateway-routed requests.
+import { clearSession, saveSession, sessionSnapshot } from "../lib/session-storage";
+import { isNativeAndroid, requestCredentials, resolveApiUrl } from "../lib/runtime";
+import type { Account } from "../types/auth";
 
 export class ApiError extends Error {
   constructor(
@@ -58,38 +61,41 @@ async function readErrorMessage(response: Response, fallback: string): Promise<{
   return { message: fallback };
 }
 
-type StoredAccount = { id: number; accessToken: string; [key: string]: unknown };
 let pendingRefresh: Promise<string | undefined> | undefined;
 
-function storedAccount(): StoredAccount | undefined {
-  try {
-    const account = JSON.parse(localStorage.getItem("haru-account") ?? "null");
-    return typeof account?.id === "number" && typeof account?.accessToken === "string" ? account : undefined;
-  } catch { return undefined; }
-}
-function notifySession(account?: StoredAccount) {
+function notifySession(account?: Account) {
   if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("haru-session-updated", { detail: account }));
 }
-async function refreshSession(account: StoredAccount): Promise<string | undefined> {
+async function refreshSession(account: Account): Promise<string | undefined> {
   if (!pendingRefresh) {
     pendingRefresh = (async () => {
       try {
-        const response = await fetch("/api/v1/auth/refresh", {
-          method: "POST", credentials: "include", headers: { "content-type": "application/json" }, body: "{}",
+        const headers = new Headers({ "content-type": "application/json" });
+        if (isNativeAndroid) headers.set("X-Client-Platform", "android");
+        const response = await fetch(resolveApiUrl("/api/v1/auth/refresh"), {
+          method: "POST",
+          credentials: requestCredentials,
+          headers,
+          body: JSON.stringify(account.refreshToken ? { refreshToken: account.refreshToken } : {}),
         });
-        const current = storedAccount();
+        const current = sessionSnapshot();
         // Do not restore a session after logout or overwrite an account switched in another tab.
         if (current?.id !== account.id || current.accessToken !== account.accessToken) return undefined;
         if (response.status === 401) {
-          localStorage.removeItem("haru-account"); notifySession(); return undefined;
+          await clearSession(); notifySession(); return undefined;
         }
         if (!response.ok) return undefined;
         const body = await response.json();
         if (typeof body.accessToken !== "string" || body.user?.id !== account.id) return undefined;
-        const latest = storedAccount();
+        const latest = sessionSnapshot();
         if (latest?.id !== account.id || latest.accessToken !== account.accessToken) return undefined;
-        const updated = { ...latest, ...body.user, accessToken: body.accessToken };
-        localStorage.setItem("haru-account", JSON.stringify(updated)); notifySession(updated);
+        const updated: Account = {
+          ...latest,
+          ...body.user,
+          accessToken: body.accessToken,
+          refreshToken: body.refreshToken ?? latest.refreshToken,
+        };
+        await saveSession(updated); notifySession(updated);
         return body.accessToken;
       } catch { return undefined; }
     })().finally(() => { pendingRefresh = undefined; });
@@ -100,21 +106,23 @@ async function refreshSession(account: StoredAccount): Promise<string | undefine
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const headers = new Headers();
   if (options.body !== undefined) headers.set("content-type", "application/json");
+  if (isNativeAndroid && path.startsWith("/api/")) headers.set("X-Client-Platform", "android");
   const privatePath = /^\/api\/v1\/(content|analytics|ai|users)(\/|$)/.test(path);
-  const account = privatePath ? storedAccount() : undefined;
+  const account = privatePath ? sessionSnapshot() : undefined;
   const accessToken = options.accessToken ?? account?.accessToken;
   if (accessToken) headers.set("authorization", `Bearer ${accessToken}`);
-  const send = () => fetch(path, {
+  const send = () => fetch(resolveApiUrl(path), {
     method: options.method ?? (options.body === undefined ? "GET" : "POST"),
-    headers, credentials: "include",
+    headers,
+    credentials: requestCredentials,
     body: options.body === undefined ? undefined : JSON.stringify(options.body),
   });
   let response = await send();
   if (response.status === 401 && account && accessToken === account.accessToken) {
-    const current = storedAccount();
+    const current = sessionSnapshot();
     if (current?.id === account.id) {
       const nextToken = current.accessToken !== accessToken ? current.accessToken : await refreshSession(account);
-      if (nextToken && storedAccount()?.id === account.id) {
+      if (nextToken && sessionSnapshot()?.id === account.id) {
         headers.set("authorization", `Bearer ${nextToken}`);
         response = await send();
       }

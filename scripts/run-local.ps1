@@ -28,41 +28,17 @@ Write-Host (' ' + $Root)
 Write-Host '============================================'
 Write-Host ''
 
-# Load .env into process env (skip blank / # comments)
-$envFile = Join-Path $Root '.env'
-if (Test-Path $envFile) {
-  Get-Content $envFile | ForEach-Object {
-    $line = $_.Trim()
-    if (-not $line -or $line.StartsWith('#')) { return }
-    $i = $line.IndexOf('=')
-    if ($i -lt 1) { return }
-    $name = $line.Substring(0, $i).Trim()
-    $value = $line.Substring($i + 1)
-    Set-Item -Path ('Env:' + $name) -Value $value
-  }
-  Write-Host 'Loaded .env'
-}
-
 function Ensure-Env([string]$name, [string]$default) {
   $current = (Get-Item ('Env:' + $name) -ErrorAction SilentlyContinue).Value
   if (-not [string]::IsNullOrEmpty($current)) { return }
   Set-Item -Path ('Env:' + $name) -Value $default
 }
 
+# Service URLs only. Database, JWT, and LLM settings live in each service .env.
 Ensure-Env 'USER_SERVICE_URL' 'http://localhost:8001'
 Ensure-Env 'CONTENT_SERVICE_URL' 'http://localhost:3001'
 Ensure-Env 'ANALYTICS_SERVICE_URL' 'http://localhost:3003'
 Ensure-Env 'AI_SERVICE_URL' 'http://localhost:3004'
-Ensure-Env 'USER_DATABASE_URL' 'postgresql+psycopg://postgres:postgres@localhost:5432/user_service'
-Ensure-Env 'CONTENT_DATABASE_URL' 'postgresql://content_user:KITS2026@localhost:5432/content_service'
-Ensure-Env 'DATABASE_URL' 'postgresql+asyncpg://chatbot_user:KITS2026@localhost:5432/chatbot_service'
-Ensure-Env 'FRONTEND_URL' 'http://localhost:5173'
-Ensure-Env 'FRONTEND_ORIGIN' 'http://localhost:5173,http://127.0.0.1:5173'
-Ensure-Env 'USER_JWT_SECRET' 'local-development-secret-change-in-production'
-if ([string]::IsNullOrEmpty($env:JWT_SECRET)) { $env:JWT_SECRET = $env:USER_JWT_SECRET }
-Ensure-Env 'LLM_PROVIDER' 'openai'
-Ensure-Env 'LLM_MODEL' 'qwen/qwen3.6-27b'
-Ensure-Env 'LLM_BASE_URL' 'https://api.groq.com/openai/v1'
 
 function Get-ServicePythonExe([string]$serviceDir) {
   $venvEnv = Join-Path $serviceDir 'venv.env'
@@ -243,10 +219,6 @@ $env:PORT = '3003'
 Start-Hidden 'analytics' $analyticsDir 'corepack pnpm start'
 
 $env:SECURE_COOKIES = 'false'
-$env:SMTP_HOST = 'localhost'
-$env:SMTP_PORT = '1025'
-$env:SMTP_USE_TLS = 'false'
-$env:SMTP_FROM = 'kits@local.test'
 $env:PYTHONPATH = '.'
 Start-Hidden 'user' $userDir '.venv\Scripts\python.exe -m uvicorn app.main:app --host 0.0.0.0 --port 8001'
 

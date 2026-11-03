@@ -160,6 +160,8 @@ export async function getDashboard(request: Request, response: Response): Promis
     learning: reviews.filter((review) => review.status === "learning").length,
     mastered: reviews.filter((review) => review.status === "mastered").length,
     accuracy: totalAnswers === 0 ? 0 : Math.round((correctAnswers / totalAnswers) * 100),
+    correctAnswers,
+    totalAnswers,
     streakDays,
     longestStreak: streakRecord?.longestStreak ?? streakDays,
     averageResponseTimeMs: overallAvgResponseTimeMs,
@@ -171,5 +173,12 @@ export async function getDashboard(request: Request, response: Response): Promis
       ? [...reviews].sort((a, b) => a.nextReviewAt.localeCompare(b.nextReviewAt))[0].nextReviewAt
       : null,
     reviews: [...reviews].sort((a, b) => a.nextReviewAt.localeCompare(b.nextReviewAt)).slice(0, 50),
+    learnedWords: [...reviews]
+      .sort((a, b) => a.word.localeCompare(b.word, "ko"))
+      .map((review) => ({
+        word: review.word,
+        translation: review.translation,
+        status: review.status,
+      })),
   });
 }

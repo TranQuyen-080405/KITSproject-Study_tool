@@ -279,7 +279,7 @@ export function FlashcardStudyPage({
             gap: "12px",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <div className="study-title-row" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <button
               className="manage-secondary-button interactive-element"
               onClick={onBackToDecks}
@@ -300,7 +300,7 @@ export function FlashcardStudyPage({
             </h1>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <div className="study-toolbar" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             {/* Filter Toggle */}
             <div
               style={{

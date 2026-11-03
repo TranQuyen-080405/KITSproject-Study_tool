@@ -60,7 +60,7 @@ Email:    test@local.test
 
 ## Cấu hình tối thiểu
 
-Sao chép `.env.example` thành `.env`, sau đó cấu hình JWT, Gmail SMTP và Google OAuth. `GOOGLE_CLIENT_ID` được dùng đồng thời bởi backend để xác minh ID token và frontend để hiển thị nút Google.
+Sửa `apps/user-service/.env` khi đổi JWT, SMTP hoặc Google OAuth. Backend đọc `GOOGLE_CLIENT_ID` trong file đó. Web chỉ hiện nút Google khi `apps/web/.env` có `VITE_GOOGLE_CLIENT_ID` cùng giá trị.
 
 Google OAuth Client phải có Authorized JavaScript origins (Web và/hoặc demo):
 

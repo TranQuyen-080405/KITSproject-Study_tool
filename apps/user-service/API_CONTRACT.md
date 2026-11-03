@@ -386,7 +386,7 @@ Logout:
 
 ### 4.5. Luồng quyền ADMIN
 
-Email nằm trong `USER_ADMIN_EMAILS` được gán role `ADMIN` tại thời điểm đăng ký. Thay đổi `.env` không tự cập nhật role của user đã tồn tại.
+Email nằm trong `ADMIN_EMAILS` được gán role `ADMIN` tại thời điểm đăng ký. Thay đổi `.env` không tự cập nhật role của user đã tồn tại.
 
 Hai API quản trị kiểm tra cả access token hợp lệ và role `ADMIN`:
 
@@ -520,8 +520,8 @@ Database có bảng `users` và `user_verification_tokens`. Các password, OTP v
 
 | Biến | Ý nghĩa |
 | --- | --- |
-| `USER_JWT_SECRET` | Khóa ký JWT; phải là chuỗi bí mật mạnh |
-| `USER_ADMIN_EMAILS` | Danh sách email admin, phân cách bằng dấu phẩy |
+| `JWT_SECRET` | Khóa ký JWT; phải là chuỗi bí mật mạnh |
+| `ADMIN_EMAILS` | Danh sách email admin, phân cách bằng dấu phẩy |
 | `GOOGLE_CLIENT_ID` | OAuth Client ID cho Google Login |
 | `USER_API_URL` | Base URL FastAPI được nhúng vào frontend lúc build |
 | `FRONTEND_URL` | Origin frontend được backend cho phép qua CORS |
@@ -531,7 +531,7 @@ Database có bảng `users` và `user_verification_tokens`. Các password, OTP v
 | `SMTP_PASSWORD` | Google App Password hoặc SMTP credential |
 | `SMTP_USE_TLS` | Bật STARTTLS khi dùng Gmail cổng 587 |
 
-File `.env` chứa secret và đã được `.gitignore`; không đưa file này lên Git. Chỉ commit `.env.example` với giá trị mẫu.
+File `.env` chứa secret và đã được `.gitignore`; không đưa file này lên Git.
 
 ## 9. Phạm vi và thiết kế dữ liệu
 

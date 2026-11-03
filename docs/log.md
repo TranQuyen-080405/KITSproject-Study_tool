@@ -235,3 +235,88 @@ Format mỗi mục (do script tạo):
 - Seed mock data 1 tháng cho user test
 - Tạo 5 bài học mẫu mới, 30 từ/câu hỏi và lịch ôn tập Analytics cho userId=1 để mô phỏng dùng app lâu dài
 ----------------------------------------
+
+--- Trần Quyền <2026-10-26 16:45>------
+- Chuyển biến môi trường từ .env gốc vào từng service
+- User, Content, AI và Analytics đọc .env trong thư mục của mình; Docker Compose và run.cmd không còn phụ thuộc file .env ở root
+----------------------------------------
+
+--- Trần Quyền <2026-10-26 16:49>------
+- Bỏ .env.example, chỉ giữ .env trong từng service
+- User, Content, Analytics và AI chạy bằng .env của chính service; Web, Mobile và Gateway không cần file env
+----------------------------------------
+
+--- Trần Quyền <2026-10-26 17:52>------
+- Content: migration Flashcard từ bảng Lesson cũ; tạo database analytics_service và apply migration
+- Trang flashcard hết lỗi 500 vì bảng Flashcard đã có; 7 bộ từ và 35 thẻ cũ được giữ trong DB. Analytics cũng có bảng review trên Postgres local.
+----------------------------------------
+
+--- Trần Quyền <2026-10-26 17:58>------
+- Web: bổ sung giao diện responsive cho màn hình điện thoại 440x956
+- Chuyển sidebar thành thanh điều hướng dưới, co giãn nội dung học và biểu đồ, hỗ trợ safe-area và loại bỏ cuộn ngang trên các màn Flashcard, AI, thống kê, ôn tập và đăng nhập.
+----------------------------------------
+
+--- Trần Quyền <2026-10-26 18:06>------
+- Web: mở rộng Settings theo nhóm My Account và Appearance
+- Cho phép đổi Theme Light/Dark/System, mật độ hiển thị, cỡ chữ và ảnh nền với phản hồi tức thời; giữ các mục chưa được app hỗ trợ ra khỏi giao diện.
+----------------------------------------
+
+--- Trần Quyền <2026-10-26 18:46>------
+- Mobile: thay Expo/React Native bằng Capacitor 7 Android dùng chung apps/web
+- Đóng gói toàn bộ React/Vite UI thành APK, kết nối Gateway qua 10.0.2.2, lưu refresh token bằng Android Keystore, hỗ trợ CORS và nút Back native; Google Sign-In native để phase sau.
+----------------------------------------
+
+--- Trần Quyền <2026-10-26 19:02>------
+- Thêm bộ kiểm thử hiệu năng Grafana k6 trong performance-tests/k6 với inventory, bốn scenario, runner và báo cáo
+- Cho phép chạy smoke/load/stress/spike an toàn qua API Gateway, lưu riêng JSONL, summary, dashboard, Markdown và log cho từng lần chạy
+----------------------------------------
+
+--- Trần Quyền <2026-11-03 11:41>------
+- Viết lại k6 theo từng mức VU, thêm capacity/soak/chat và chạy đo local
+- Load 5-50 VU, capacity tới 100 RPS, stress quá tải ở 75-100 VU; kết quả nằm ở performance-tests/k6/KET_QUA_TONG_HOP.md
+----------------------------------------
+
+--- Trần Quyền <2026-11-03 11:43>------
+- Thêm scripts/schedule-review-examples.ts và scripts/README.md trong Analytics
+- Chạy lại ba nhánh lịch ôn (thuộc, không thuộc, người học thật) qua scheduleReview và đối chiếu số input/output đã chốt
+----------------------------------------
+
+--- Trần Quyền <2026-11-03 11:58>------
+- run:all goi scripts/run-all.mjs de bat them User Service cong 8001
+- Web, Gateway, Content, Analytics va User cung len trong mot lenh; AI van chay rieng
+----------------------------------------
+
+--- Trần Quyền <2026-11-03 12:17>------
+- Bảng thống kê: chuông ôn, nhóm từ đếm ngược/đến lượt, nút Luyện mở quiz
+- Khi đến hạn thì chuông và popup hiện; Luyện soạn câu hỏi từ nhóm từ đó và lưu kết quả ôn
+----------------------------------------
+
+--- Trần Quyền <2026-11-03 12:35>------
+- Thêm tab Lịch học và chuông ôn chung
+- Tách từ đến lượt và từ đang chờ sang tab Lịch học, chuông cố định trên mọi màn để luyện nhanh
+----------------------------------------
+
+--- Trần Quyền <2026-11-03 12:43>------
+- Đổi chuyên cần học tập sang heatmap
+- Lưới ô 12 tháng trên bảng thống kê, màu theo số lượt học mỗi ngày
+----------------------------------------
+
+--- Trần Quyền <2026-11-03 13:22>------
+- Thêm tiến độ và buổi học gần đây vào bảng thống kê
+- Hiện số từ đã thuộc, đang học, chuỗi dài nhất, số buổi, tốc độ trả lời và các buổi vừa học
+----------------------------------------
+
+--- Trần Quyền <2026-11-03 13:25>------
+- Thêm cột từ đã học cạnh buổi học gần đây
+- Bảng thống kê hiện hai cột: buổi học gần đây và toàn bộ từ đã học
+----------------------------------------
+
+--- Trần Quyền <2026-11-03 13:28>------
+- Chia lịch học thành hai cột
+- Đến lượt và đang chờ nằm cạnh nhau, mỗi dòng chỉ hiện từ
+----------------------------------------
+
+--- Trần Quyền <2026-11-03 13:41>------
+- Nạp dữ liệu một tháng cho tài khoản test
+- Tạo 10 bộ từ và lịch sử học để tài khoản test trông như đã dùng khoảng một tháng
+----------------------------------------

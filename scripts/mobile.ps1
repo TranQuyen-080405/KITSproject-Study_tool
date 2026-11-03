@@ -1,5 +1,5 @@
 param(
-    [ValidateSet('check', 'backend', 'android', 'start', 'web', 'stop')]
+    [ValidateSet('check', 'backend', 'sync', 'android', 'dev', 'open', 'stop')]
     [string]$Mode = 'check'
 )
 $ErrorActionPreference = 'Stop'
@@ -16,6 +16,20 @@ if ($env:ANDROID_HOME) {
 function Need-Command([string]$Command, [string]$HelpText) {
     if (-not (Get-Command $Command -ErrorAction SilentlyContinue)) { throw "$Command is missing. $HelpText" }
 }
+function Sync-Capacitor([switch]$LiveReload) {
+    $env:VITE_API_URL = if ($env:VITE_API_URL) { $env:VITE_API_URL } else { 'http://10.0.2.2:3000' }
+    $env:MOBILE_ALLOW_CLEARTEXT = 'true'
+    if ($LiveReload) {
+        $env:CAP_SERVER_URL = if ($env:CAP_SERVER_URL) { $env:CAP_SERVER_URL } else { 'http://10.0.2.2:5173' }
+        & corepack pnpm --filter '@korean-learning/web' build
+        if ($LASTEXITCODE -ne 0) { throw 'Web build failed.' }
+        & corepack pnpm --filter '@korean-learning/mobile' exec cap sync android
+    } else {
+        Remove-Item Env:CAP_SERVER_URL -ErrorAction SilentlyContinue
+        & corepack pnpm --filter '@korean-learning/mobile' sync
+    }
+    if ($LASTEXITCODE -ne 0) { throw 'Capacitor sync failed.' }
+}
 
 switch ($Mode) {
     'check' {
@@ -27,43 +41,50 @@ switch ($Mode) {
         }
         if (Get-Command java -ErrorAction SilentlyContinue) {
             $javaVersion = & java --version 2>$null | Select-Object -First 1
-            if ($javaVersion -notmatch '^(?:openjdk|java)\s+17(?:\.|\s|$)') {
-                Write-Host "[CHECK] Found $javaVersion. Use JDK 17 for the Android build." -ForegroundColor Yellow
+            if ($javaVersion -notmatch '^(?:openjdk|java)\s+21(?:\.|\s|$)') {
+                Write-Host "[CHECK] Found $javaVersion. Use JDK 21 for the Android build." -ForegroundColor Yellow
             }
         }
         if ($env:ANDROID_HOME) { Write-Host "Android SDK: $env:ANDROID_HOME" }
         else { Write-Host 'Install Android Studio and its SDK. See apps/mobile/README.md.' }
-        Write-Host 'Use JDK 17. Start Docker Desktop and an Android virtual device before building.'
+        Write-Host 'Use JDK 21. Start Docker Desktop and an Android virtual device before building.'
         Write-Host 'Next: corepack pnpm mobile:backend, then corepack pnpm mobile:android'
     }
     'backend' {
         Need-Command 'docker' 'Install and start Docker Desktop with Linux containers.'
-        & docker compose -f docker-compose.mobile.yml up -d --build
+        & docker compose up -d --build
         if ($LASTEXITCODE -ne 0) { throw 'The mobile backend did not start. Check Docker Desktop and the output above.' }
-        & docker compose -f docker-compose.mobile.yml ps
-        Write-Host 'API: http://localhost:3000/health | Test email inbox: http://localhost:8025'
+        & docker compose ps
+        Write-Host 'Full API: http://localhost:3000/health | Test email inbox: http://localhost:8025'
     }
     'stop' {
         Need-Command 'docker' 'Install Docker Desktop.'
-        & docker compose -f docker-compose.mobile.yml down
+        & docker compose down
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
         Write-Host 'Mobile backend stopped. Database volumes are preserved.'
     }
+    'sync' {
+        Need-Command 'corepack' 'Install Node.js 22 LTS and enable Corepack.'
+        Sync-Capacitor
+    }
     'android' {
         Need-Command 'corepack' 'Install Node.js 22 LTS and enable Corepack.'
-        Need-Command 'java' 'Install JDK 17 and configure JAVA_HOME.'
+        Need-Command 'java' 'Install JDK 21 and configure JAVA_HOME.'
         Need-Command 'adb' 'Install Android Studio, SDK Platform-Tools, and set ANDROID_HOME.'
-        & corepack pnpm --filter '@korean-learning/mobile' android
+        Sync-Capacitor
+        & corepack pnpm --filter '@korean-learning/mobile' exec cap run android
         exit $LASTEXITCODE
     }
-    'start' {
-        & corepack pnpm --filter '@korean-learning/mobile' start --dev-client
+    'dev' {
+        Need-Command 'corepack' 'Install Node.js 22 LTS and enable Corepack.'
+        Need-Command 'adb' 'Start an Android emulator before live reload.'
+        Sync-Capacitor -LiveReload
+        Write-Host 'Capacitor will load Vite from 10.0.2.2:5173. Keep corepack pnpm run:all running.'
+        & corepack pnpm --filter '@korean-learning/mobile' exec cap run android
         exit $LASTEXITCODE
     }
-    'web' {
-        # Browser runs on the laptop, so it uses localhost rather than 10.0.2.2.
-        $env:EXPO_PUBLIC_API_URL = 'http://localhost:3000'
-        & corepack pnpm --filter '@korean-learning/mobile' web --port 8081
+    'open' {
+        & corepack pnpm --filter '@korean-learning/mobile' open:android
         exit $LASTEXITCODE
     }
 }

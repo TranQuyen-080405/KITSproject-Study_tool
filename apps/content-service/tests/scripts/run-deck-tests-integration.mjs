@@ -9,8 +9,12 @@ const { Client } = require("pg");
 const serviceRoot = fileURLToPath(new URL("../..", import.meta.url));
 let databaseUrl = process.env.CONTENT_TEST_DATABASE_URL ?? process.env.CONTENT_DATABASE_URL;
 if (!databaseUrl) {
-  const envFile = readFileSync(new URL("../../../../.env", import.meta.url), "utf8");
-  databaseUrl = envFile.split(/\r?\n/).find((line) => line.startsWith("CONTENT_DATABASE_URL="))?.split("=").slice(1).join("=").trim();
+  try {
+    const envFile = readFileSync(new URL("../../.env", import.meta.url), "utf8");
+    databaseUrl = envFile.split(/\r?\n/).find((line) => line.startsWith("CONTENT_DATABASE_URL="))?.split("=").slice(1).join("=").trim();
+  } catch (error) {
+    if (error.code !== "ENOENT") throw error;
+  }
 }
 if (!databaseUrl) throw new Error("Set CONTENT_DATABASE_URL to a local PostgreSQL database.");
 databaseUrl = databaseUrl.replace(/^["']|["']$/g, "").replace("postgresql+asyncpg://", "postgresql://").replace("postgresql+psycopg://", "postgresql://");

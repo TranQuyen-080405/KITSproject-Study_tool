@@ -10,6 +10,7 @@ export type AuthUser = {
 
 export type Account = AuthUser & {
   accessToken: string;
+  refreshToken?: string;
 };
 
 export type LoginRequest = {
@@ -31,6 +32,7 @@ export type VerifyEmailRequest = {
 
 export type AuthSessionResponse = {
   accessToken: string;
+  refreshToken?: string;
   expiresIn: number;
   user: AuthUser;
 };

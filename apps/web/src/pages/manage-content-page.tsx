@@ -278,7 +278,7 @@ export function ManageContentPage({
                 {selectedLessonId ? "Cấu hình Bài học" : "Tạo bài học mới"}
               </h2>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "10px" }}>
+              <div className="manage-form-grid" style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "10px" }}>
                 <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12.5px", fontWeight: 600 }}>
                   Tên bài học
                   <input
@@ -302,7 +302,7 @@ export function ManageContentPage({
                 </label>
               </div>
 
-              <div style={{ display: "flex", gap: "8px" }}>
+              <div className="manage-form-actions" style={{ display: "flex", gap: "8px" }}>
                 <button
                   className="manage-primary-button interactive-element"
                   disabled={isSaving}
@@ -333,7 +333,7 @@ export function ManageContentPage({
                   <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
                     <form onSubmit={handleAddVocabulary} style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                       <h3 style={{ margin: 0, fontSize: "13.5px", fontWeight: 700 }}>Thêm từ vựng</h3>
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                      <div className="manage-vocab-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
                         <input
                           maxLength={120}
                           onChange={(e) => setVocabWord(e.target.value)}

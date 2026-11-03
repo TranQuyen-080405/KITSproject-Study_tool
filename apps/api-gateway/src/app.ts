@@ -5,18 +5,31 @@ import { createGatewayAuth } from "./auth.js";
 
 export function createApp(config: GatewayConfig) {
   const app = express();
+  const corsOrigins = new Set(config.corsOrigins ?? [
+    "http://localhost",
+    "http://localhost:5173",
+    "http://localhost:8081",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:8081",
+    "https://localhost",
+    "capacitor://localhost",
+  ]);
+
+  app.use((req, res, next) => {
+    const origin = req.header("origin");
+    if (origin && corsOrigins.has(origin)) {
+      res.setHeader("Access-Control-Allow-Origin", origin);
+      res.setHeader("Access-Control-Allow-Credentials", "true");
+      res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Client-Platform");
+      res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS");
+      res.setHeader("Vary", "Origin");
+    }
+    if (req.method === "OPTIONS") { res.sendStatus(204); return; }
+    next();
+  });
 
   if (process.env.MOBILE_ONLY === "true") {
     app.use((req, res, next) => {
-      const origin = req.header("origin");
-      if (origin === "http://localhost:8081" || origin === "http://127.0.0.1:8081") {
-        res.setHeader("Access-Control-Allow-Origin", origin);
-        res.setHeader("Access-Control-Allow-Credentials", "true");
-        res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Client-Platform");
-        res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS");
-        res.setHeader("Vary", "Origin");
-      }
-      if (req.method === "OPTIONS") { res.sendStatus(204); return; }
       if (/^\/api\/v1\/(ai|analytics)(\/|$)/.test(req.path)) {
         res.status(404).json({ error: "Route not found" }); return;
       }

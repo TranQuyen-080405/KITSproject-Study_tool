@@ -4,11 +4,13 @@
 
 Cần Postgres local/Docker cho Content (và User/AI nếu dùng). Chỉ UI:
 
+
 ```bash
 corepack pnpm --filter @korean-learning/web dev
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 0.0.0.0 --port 3004
 ```
 
-Chạy song song Web + Gateway + Content + Analytics (`run:all`):
+Chạy song song Web + Gateway + Content + Analytics + User (`run:all`):
 
 ```bash
 corepack pnpm run:all
@@ -28,16 +30,16 @@ corepack pnpm run:mobile
 
 | Script | App | Port |
 | --- | --- | --- |
-| `run:all` | web + gateway + content + analytics | nhiều cổng |
+| `run:all` | web + gateway + content + analytics + user | nhiều cổng |
 | `run:web` | Web (Vite) | http://localhost:5173 |
 | `run:gateway` | API Gateway | http://localhost:3000 |
 | `run:content` | Content Service | http://localhost:3001 |
 | `run:analytics` | Analytics Service | http://localhost:3003 |
 | `run:user` | User Service (Python/`uvicorn`) | http://localhost:8001 |
 | `run:ai` | AI Service (Python/`uvicorn`) | http://localhost:3004 |
-| `run:mobile` | Mobile (Expo) | Expo CLI |
+| `run:mobile` | Android (Capacitor live reload) | Android emulator |
 
-`run:user` / `run:ai` cần venv + dependency Python đã cài; Postgres tương ứng đang chạy.
+`run:all` và `run:user` dùng `apps/user-service/.venv`. `run:ai` dùng venv của AI Service. Postgres tương ứng phải đang chạy.
 ## Web + auth stack (Docker)
 
 All business services require bearer authentication. Web sends the signed-in session automatically;
@@ -107,15 +109,16 @@ docker compose up -d --build analytics-service
 Analytics lưu reviews, sessions và streaks trong PostgreSQL qua Prisma. Docker công khai DB tại `localhost:5437`. Xem [hướng dẫn migration và nhập JSON cũ](apps/analytics-service/README.md). RabbitMQ chưa có consumer.
 
 
-## Android app: manual study
+## Android app (Capacitor)
 
-The Android client now supports User Service account flows, manual decks/cards/questions,
-and flashcard/question practice across one deck or the whole collection.
-Its standalone backend uses User + Content only.
+The Android app wraps the complete React/Vite client from `apps/web`, so Web
+and Android share the same authentication, flashcards, AI and Analytics UI.
+`apps/mobile` owns only the Capacitor configuration and generated Android shell.
 
 See [the Windows emulator setup and testing guide](apps/mobile/README.md).
 Start with `corepack pnpm mobile:check`, then `corepack pnpm mobile:backend`
-and `corepack pnpm mobile:android`. Use `corepack pnpm mobile:web` for a laptop browser preview.
+and `corepack pnpm mobile:android`. Use `corepack pnpm mobile:dev` while
+`corepack pnpm run:all` is running for live reload.
 
 # Korean Learning App
 
@@ -160,7 +163,7 @@ Analytics
 
 ## Công nghệ sử dụng
 
-React, React Native, Expo, Node.js, Express, TypeScript, PostgreSQL, Prisma, RabbitMQ, Vitest, Docker và Docker Compose.
+React, Vite, Capacitor Android, Node.js, Express, TypeScript, PostgreSQL, Prisma, RabbitMQ, Vitest, Docker và Docker Compose.
 
 ## Cấu trúc repository
 

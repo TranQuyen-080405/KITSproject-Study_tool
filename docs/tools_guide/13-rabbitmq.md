@@ -13,7 +13,7 @@ Hiện mới có placeholder:
 - service `rabbitmq` trong Docker Compose  
 - thư mục `infrastructure/rabbitmq/`  
 - folder `src/events/` trong từng service  
-- biến `RABBITMQ_URL` trong `.env.example`  
+- `RABBITMQ_URL` gắn trực tiếp trong `docker-compose.yml` của Analytics  
 
 **Chưa implement** producer/consumer.
 
@@ -37,10 +37,10 @@ URL kết nối mẫu: `amqp://guest:guest@localhost:5672`
 
 ## 5. Ví dụ thực tế từ Source Code
 
-[`.env.example`](../../.env.example):
+Trong [`docker-compose.yml`](../../docker-compose.yml), Analytics nhận:
 
 ```env
-RABBITMQ_URL=amqp://guest:guest@localhost:5672
+RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
 ```
 
 [`infrastructure/rabbitmq/README.md`](../../infrastructure/rabbitmq/README.md) ghi rõ: producers/consumers cố ý chưa viết.

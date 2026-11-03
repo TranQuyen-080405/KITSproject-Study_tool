@@ -1,9 +1,9 @@
-﻿// This file configures TypeScript for the Mobile Client.
-{
-  "extends": "expo/tsconfig.base",
+﻿{
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "strict": true,
-    "types": ["react"]
+    "types": ["node"],
+    "noEmit": true
   },
-  "include": ["src", "index.ts", "app.config.ts"]
+  "include": ["capacitor.config.ts"]
 }

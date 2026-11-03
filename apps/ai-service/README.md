@@ -25,18 +25,9 @@ enter a valid User Service access token in the Access token field. Main web hand
 docker compose version
 ```
 
-### 2. Create local environment configuration
+### 2. Local environment
 
-```powershell
-Copy-Item .env.example .env
-```
-
-Open `.env` and set at least these values:
-
-```env
-POSTGRES_PASSWORD=
-LLM_API_KEY=
-```
+`apps/ai-service/.env` holds the database URL, LLM key, and the Postgres settings used by this folder's Compose file. Fill `LLM_API_KEY` and `POSTGRES_PASSWORD` before starting.
 
 ### 3. Build and start all services
 
@@ -109,12 +100,11 @@ Frontend:
 
 ```powershell
 cd frontend
-Copy-Item .env.example .env
 npm install
 npm run dev
 ```
 
-Set `VITE_API_URL=http://localhost:3000` in `frontend/.env`.
+Vite proxies `/conversations`, `/health`, and `/api` to `http://localhost:3004`. Set `VITE_API_URL` in `frontend/.env` only when that proxy should not be used.
 
 
 ## Complete missing CSV flashcard sides

@@ -18,7 +18,7 @@ corepack pnpm run:analytics
 
 `run.cmd` cũng đã được cập nhật để generate client, chạy migration và nhập JSON cũ trước khi start.
 
-Đặt `ANALYTICS_DATABASE_URL` trong môi trường hoặc file `.env` ở root/service:
+Đặt `ANALYTICS_DATABASE_URL` trong môi trường hoặc `apps/analytics-service/.env`:
 
 ```dotenv
 ANALYTICS_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/analytics_service
@@ -27,9 +27,8 @@ ANALYTICS_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/analytics_s
 Dùng thông tin đăng nhập phù hợp với PostgreSQL của bạn. Khi dùng database từ Docker Compose
 trên host, cổng mặc định là 5437; trong mạng Docker, host là analytics-postgres:5432.
 
-Thứ tự cấu hình: biến môi trường ANALYTICS_DATABASE_URL → root .env ANALYTICS_DATABASE_URL →
-service .env ANALYTICS_DATABASE_URL → service .env DATABASE_URL → default localhost:5432/analytics_service.
-Không lấy DATABASE_URL toàn cục vì biến đó thuộc AI Service trong workspace này.
+Thứ tự cấu hình: biến môi trường ANALYTICS_DATABASE_URL →
+`apps/analytics-service/.env` → default localhost:5432/analytics_service.
 
 ## Migration và nhập lịch sử JSON
 

@@ -10,7 +10,7 @@ Tài liệu này dành cho người mới: giải thích từng công cụ / lo�
 4. [06-typescript.md](./06-typescript.md) → [07-tsx.md](./07-tsx.md) → [08-vitest.md](./08-vitest.md)
 5. [09-express.md](./09-express.md) → [10-cau-truc-mot-service.md](./10-cau-truc-mot-service.md)
 6. [11-prisma.md](./11-prisma.md) → [12-postgresql.md](./12-postgresql.md) → [13-rabbitmq.md](./13-rabbitmq.md)
-7. [14-react.md](./14-react.md) → [15-vite.md](./15-vite.md) → [16-react-native-va-expo.md](./16-react-native-va-expo.md)
+7. [14-react.md](./14-react.md) → [15-vite.md](./15-vite.md) → [16-capacitor-android.md](./16-capacitor-android.md)
 8. [17-docker-va-compose.md](./17-docker-va-compose.md) → [18-dockerfile.md](./18-dockerfile.md) → [19-env-va-gitignore.md](./19-env-va-gitignore.md)
 9. [20-yaml.md](./20-yaml.md) → [21-markdown-va-docs.md](./21-markdown-va-docs.md) → [22-cursor-rules.md](./22-cursor-rules.md) → [23-shared-packages.md](./23-shared-packages.md)
 
@@ -34,7 +34,7 @@ Tài liệu này dành cho người mới: giải thích từng công cụ / lo�
 | `13-rabbitmq.md` | Hàng đợi sự kiện (sắp dùng) |
 | `14-react.md` | UI web |
 | `15-vite.md` | Dev server web |
-| `16-react-native-va-expo.md` | UI mobile |
+| `16-capacitor-android.md` | Đóng gói Web thành app Android |
 | `17-docker-va-compose.md` | Chạy nhiều container cùng lúc |
 | `18-dockerfile.md` | Công thức đóng gói app |
 | `19-env-va-gitignore.md` | Bí mật cấu hình & file không commit |

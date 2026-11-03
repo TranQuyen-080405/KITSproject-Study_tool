@@ -46,77 +46,35 @@ type ChatbotPageProps = {
 };
 
 // ── Korean word and meaning extraction ─────────────────────────────────────
-const HANGUL_WORD_RE = /[\uAC00-\uD7A3\u1100-\u11FF\u3130-\u318F]+/g;
+const VOCAB_LINE_RE =
+  /^(?:(?:\d+[.)]|\*|-|•)\s*)?(?:\*\*|\*|`)?([\uAC00-\uD7A3\u1100-\u11FF\u3130-\u318F]+)(?:\*\*|\*|`)?\s*:\s*(.+)$/;
+const EXAMPLE_LINE_RE = /^(?:(?:\d+[.)]|\*|-|•)\s*)?(?:ví dụ|vi du|example|예문|예)\s*:/i;
 
 function cleanMeaning(str: string): string {
   return str
-    .replace(/^[:\-–—\/\=\s\.\)]+/, "")
+    .replace(/^[:\-–—/=\s.)]+/, "")
     .replace(/^\*\*|\*\*$/g, "")
-    // Strip trailing Korean examples in parentheses like (Ví dụ: 사과를 먹어요)
+    // Strip a trailing example kept on the same vocab line: (Ví dụ: 사과를 먹어요)
     .replace(/\s*\([^)]*[\uAC00-\uD7A3][^)]*\)/g, "")
-    .replace(/[;,\.]+$/, "")
+    .replace(/[;,.]+$/, "")
     .trim();
 }
 
 export function extractCardsFromTexts(texts: string[]): CardItem[] {
-  const map = new Map<string, string>(); // front -> back
+  const map = new Map<string, string>();
 
   for (const text of texts) {
-    const lines = text.split(/\r?\n/);
-    for (const rawLine of lines) {
+    for (const rawLine of text.split(/\r?\n/)) {
       const line = rawLine.trim();
-      if (!line) continue;
+      if (!line || EXAMPLE_LINE_RE.test(line)) continue;
 
-      // 1. Markdown table row: | [**]Hangul[**] | Meaning | ...
-      const tableMatch = line.match(/^\|?\s*(?:\*\*|\*|`|)?([\uAC00-\uD7A3\u1100-\u11FF\u3130-\u318F]+)(?:\*\*|\*|`|)?\s*\|\s*([^|]+)/);
-      if (tableMatch) {
-        const front = tableMatch[1].trim();
-        const back = cleanMeaning(tableMatch[2]);
-        if (front && back && !back.includes("---")) {
-          if (!map.has(front) || !map.get(front)) {
-            map.set(front, back);
-          }
-          continue;
-        }
-      }
+      const match = line.match(VOCAB_LINE_RE);
+      if (!match) continue;
 
-      // 2. Format with separator: e.g. "- **사과** : Quả táo", "1. **바나나**: Quả chuối", "* 사과 - Quả táo"
-      const delimMatch = line.match(
-        /^(?:(?:\d+[\.\)]|\*|\-|•)\s*)?(?:\*\*|\*|`|)?([\uAC00-\uD7A3\u1100-\u11FF\u3130-\u318F]+)(?:\*\*|\*|`|)?\s*[:\-–—\/\=]\s*(.+)$/,
-      );
-      if (delimMatch) {
-        const front = delimMatch[1].trim();
-        const back = cleanMeaning(delimMatch[2]);
-        if (front && back) {
-          if (!map.has(front) || !map.get(front)) {
-            map.set(front, back);
-          }
-          continue;
-        }
-      }
-
-      // 3. Format with parentheses: e.g. "- **사과** (Quả táo)", "사과 (Quả táo)"
-      const parenMatch = line.match(
-        /^(?:(?:\d+[\.\)]|\*|\-|•)\s*)?(?:\*\*|\*|`|)?([\uAC00-\uD7A3\u1100-\u11FF\u3130-\u318F]+)(?:\*\*|\*|`|)?\s*\(([^)]+)\)/,
-      );
-      if (parenMatch) {
-        const front = parenMatch[1].trim();
-        const back = cleanMeaning(parenMatch[2]);
-        if (front && back) {
-          if (!map.has(front) || !map.get(front)) {
-            map.set(front, back);
-          }
-          continue;
-        }
-      }
-
-      // 4. Any standalone Hangul words found in the line (fallback only if word not already mapped)
-      const hangulWords = line.match(HANGUL_WORD_RE) ?? [];
-      for (const w of hangulWords) {
-        if (!map.has(w)) {
-          map.set(w, "");
-        }
-      }
+      const front = match[1].trim();
+      const back = cleanMeaning(match[2]);
+      if (!front || !back || map.has(front)) continue;
+      map.set(front, back);
     }
   }
 
@@ -155,6 +113,7 @@ function WordSelectionModal({
 
   return (
     <div
+      className="chat-deck-modal-backdrop"
       style={{
         position: "fixed", inset: 0, zIndex: 1000,
         background: "rgba(0,0,0,0.55)", backdropFilter: "blur(6px)",
@@ -164,6 +123,7 @@ function WordSelectionModal({
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
+        className="chat-deck-modal"
         style={{
           background: "var(--bg-glass-card)", backdropFilter: "blur(20px)",
           border: "1px solid var(--border-glass)", borderRadius: "18px",
@@ -439,7 +399,7 @@ function CreateDeckModal({
 
           {/* Cards list header with AI Translate button */}
           <div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+            <div className="chat-deck-list-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
               <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
                 Danh sách thẻ ({cards.length}):
                 {missingMeaningCount > 0 ? (
@@ -477,6 +437,7 @@ function CreateDeckModal({
                 const isBackEmpty = !card.back.trim();
                 return (
                   <div
+                    className="chat-deck-card-row"
                     key={`${card.front}-${idx}`}
                     style={{
                       display: "grid",
@@ -550,7 +511,7 @@ function CreateDeckModal({
             <p style={{ margin: 0, fontSize: "12px", color: "var(--state-error)" }}>{error}</p>
           )}
 
-          <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
+          <div className="chat-deck-modal-actions" style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
             <button
               type="button" onClick={onClose} disabled={isCreating || isTranslating}
               style={{
@@ -599,6 +560,7 @@ function SuccessToast({
 
   return (
     <div
+      className="chat-success-toast"
       style={{
         position: "fixed", bottom: "24px", left: "50%", transform: "translateX(-50%)",
         zIndex: 2000, background: "var(--state-success)", color: "#fff",
@@ -1237,7 +1199,7 @@ export function ChatbotPage({ onNavigate, userId, account, onLogout }: ChatbotPa
 
           {/* Selection mode banner */}
           {isSelecting && (
-            <div style={{
+            <div className="chat-selection-banner" style={{
               display: "flex", alignItems: "center", justifyContent: "space-between",
               padding: "8px 12px", marginTop: "8px", borderRadius: "10px",
               background: "var(--brand-primary-light)", border: "1px solid var(--brand-primary)",

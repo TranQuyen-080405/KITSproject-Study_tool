@@ -2,15 +2,14 @@ import { useEffect, useState, type ReactNode } from "react";
 import logoUrl from "../../../../assets/icons/logo-1.png";
 import type { Account } from "../types/auth";
 import {
-  BookIcon2D,
   BotIcon2D,
   ChartIcon2D,
-  CheckIcon2D,
-  EditIcon2D,
+  ClockIcon2D,
   LayersIcon2D,
   LogoutIcon2D,
   SettingsIcon2D,
 } from "./icons";
+import { ReviewBell } from "./review-bell";
 
 export type AppPage =
   | "lessons"
@@ -20,6 +19,7 @@ export type AppPage =
   | "manage-content"
   | "chatbot"
   | "dashboard"
+  | "schedule"
   | "mcq"
   | "result"
   | "review";
@@ -32,6 +32,7 @@ type NavigationItem = {
 
 const navigationItems: NavigationItem[] = [
   { page: "flashcards", label: "Flashcards", icon: <LayersIcon2D size={18} /> },
+  { page: "schedule", label: "Lịch học", icon: <ClockIcon2D size={18} /> },
   { page: "chatbot", label: "Trợ lý AI", icon: <BotIcon2D size={18} /> },
   { page: "dashboard", label: "Bảng thống kê", icon: <ChartIcon2D size={18} /> },
 ];
@@ -48,26 +49,24 @@ export function AppSidebar({ activePage, onNavigate, account, onLogout }: AppSid
   const [currentBg, setCurrentBg] = useState<string>(() => localStorage.getItem("haru-bg") || "background-1");
 
   useEffect(() => {
+    document.documentElement.dataset.theme = "dark";
+    localStorage.setItem("haru-theme", "dark");
+  }, []);
+
+  useEffect(() => {
     document.body.dataset.background = currentBg;
     localStorage.setItem("haru-bg", currentBg);
   }, [currentBg]);
 
-  useEffect(() => {
-    document.documentElement.dataset.theme = "dark";
-    document.documentElement.style.setProperty("--glass-opacity-val", "0.50");
-    document.documentElement.style.setProperty("--glass-blur-val", "6px");
-    localStorage.setItem("haru-theme", "dark");
-  }, []);
-
   const avatarInitial = (account?.displayName || account?.username || "U").charAt(0).toUpperCase();
 
   return (
-    <aside className="app-sidebar">
+    <aside className={`app-sidebar${isSettingsOpen ? " app-sidebar-settings-open" : ""}`}>
       <a className="brand" href="/" onClick={(e) => { e.preventDefault(); onNavigate("lessons"); }} aria-label="Trang chủ">
         <img alt="Haru" className="brand-logo-img" src={logoUrl} />
       </a>
 
-      <nav aria-label="Điều hướng chính" style={{ flex: 1 }}>
+      <nav aria-label="Điều hướng chính" className="sidebar-nav">
         <ul className="navigation-list">
           {navigationItems.map(({ page, label, icon }) => {
             const isActive = page === activePage;
@@ -87,6 +86,7 @@ export function AppSidebar({ activePage, onNavigate, account, onLogout }: AppSid
           })}
         </ul>
       </nav>
+      <ReviewBell />
 
       {/* Gọn góc trái dưới: Icon Cài đặt & Thông tin tài khoản */}
       <div className="sidebar-footer">
@@ -106,12 +106,15 @@ export function AppSidebar({ activePage, onNavigate, account, onLogout }: AppSid
         </button>
 
         {isSettingsOpen ? (
-          <section aria-label="Cài đặt tài khoản & giao diện" className="settings-popover">
-            {/* 1. Phần Tài Khoản */}
-            <h2 style={{ fontSize: "11px", fontWeight: 800, margin: "0 0 4px", color: "var(--brand-primary)", letterSpacing: "0.05em" }}>
-              TÀI KHOẢN
-            </h2>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", padding: "8px 10px", background: "rgba(0, 0, 0, 0.04)", border: "1px solid var(--border-glass-subtle)", borderRadius: "var(--radius-md)" }}>
+          <section aria-label="Cài đặt" className="settings-popover">
+            <div className="settings-heading">
+              <SettingsIcon2D size={18} />
+              <div>
+                <h2>Cài đặt</h2>
+              </div>
+            </div>
+
+            <div className="settings-account-summary">
               <div style={{ display: "flex", alignItems: "center", gap: "8px", overflow: "hidden" }}>
                 <div className="account-avatar-sm">{avatarInitial}</div>
                 <div style={{ overflow: "hidden" }}>
@@ -126,7 +129,7 @@ export function AppSidebar({ activePage, onNavigate, account, onLogout }: AppSid
 
               {onLogout && (
                 <button
-                  aria-label="Đăng xuất khỏi tài khoản"
+                  aria-label="Đăng xuất"
                   onClick={onLogout}
                   style={{
                     background: "var(--state-error-bg)",
@@ -149,47 +152,26 @@ export function AppSidebar({ activePage, onNavigate, account, onLogout }: AppSid
               )}
             </div>
 
-            {/* 2. Phần Hình Nền */}
-            <h2 style={{ fontSize: "11px", fontWeight: 800, margin: "6px 0 4px", color: "var(--brand-primary)", letterSpacing: "0.05em" }}>
-              CHỌN ẢNH NỀN
-            </h2>
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              <button
-                className={`manage-secondary-button${currentBg === "background-1" ? " tag-active" : ""}`}
-                onClick={() => setCurrentBg("background-1")}
-                style={{ textAlign: "left", fontSize: "12px", padding: "6px 8px", justifyContent: "space-between" }}
-                type="button"
-              >
-                <span>Nền Khung Cảnh 1</span>
-                {currentBg === "background-1" && <CheckIcon2D size={14} />}
-              </button>
-              <button
-                className={`manage-secondary-button${currentBg === "background-2" ? " tag-active" : ""}`}
-                onClick={() => setCurrentBg("background-2")}
-                style={{ textAlign: "left", fontSize: "12px", padding: "6px 8px", justifyContent: "space-between" }}
-                type="button"
-              >
-                <span>Nền Khung Cảnh 2</span>
-                {currentBg === "background-2" && <CheckIcon2D size={14} />}
-              </button>
-              <button
-                className={`manage-secondary-button${currentBg === "background-3" ? " tag-active" : ""}`}
-                onClick={() => setCurrentBg("background-3")}
-                style={{ textAlign: "left", fontSize: "12px", padding: "6px 8px", justifyContent: "space-between" }}
-                type="button"
-              >
-                <span>Nền Khung Cảnh 3</span>
-                {currentBg === "background-3" && <CheckIcon2D size={14} />}
-              </button>
-              <button
-                className={`manage-secondary-button${currentBg === "gradient" ? " tag-active" : ""}`}
-                onClick={() => setCurrentBg("gradient")}
-                style={{ textAlign: "left", fontSize: "12px", padding: "6px 8px", justifyContent: "space-between" }}
-                type="button"
-              >
-                <span>Gradient Tối</span>
-                {currentBg === "gradient" && <CheckIcon2D size={14} />}
-              </button>
+            <div className="settings-group">
+              <p className="settings-group-label">NỀN</p>
+              <div className="settings-bg-swatches">
+                {[
+                  ["background-1", "Nền 1"],
+                  ["background-2", "Nền 2"],
+                  ["background-3", "Nền 3"],
+                  ["gradient", "Nền tối"],
+                ].map(([value, label]) => (
+                  <button
+                    aria-label={label}
+                    aria-pressed={currentBg === value}
+                    className={`settings-bg-swatch${currentBg === value ? " is-active" : ""}`}
+                    data-bg={value}
+                    key={value}
+                    onClick={() => setCurrentBg(value)}
+                    type="button"
+                  />
+                ))}
+              </div>
             </div>
           </section>
         ) : null}

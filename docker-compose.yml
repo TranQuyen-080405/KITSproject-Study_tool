@@ -36,25 +36,24 @@ services:
     build:
       context: .
       dockerfile: apps/user-service/Dockerfile
+    env_file:
+      - path: ./apps/user-service/.env
+        required: false
     environment:
+      # Overrides the localhost URL in apps/user-service/.env.
       USER_DATABASE_URL: postgresql+psycopg://postgres:postgres@user-postgres:5432/user_service
-      JWT_SECRET: ${USER_JWT_SECRET:-local-development-secret-change-in-production}
       JWT_ISSUER: kits-user-service
       JWT_AUDIENCE: kits-services
-      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
-      ADMIN_EMAILS: ${USER_ADMIN_EMAILS:-admin@example.com}
-      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
-      # Local default: Mailpit (http://localhost:8025). Override with Gmail in .env when ready.
-      SMTP_HOST: ${SMTP_HOST:-mailpit}
-      SMTP_PORT: ${SMTP_PORT:-1025}
-      SMTP_FROM: ${SMTP_FROM:-kits@local.test}
-      SMTP_USERNAME: ${SMTP_USERNAME:-}
-      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
-      SMTP_USE_TLS: ${SMTP_USE_TLS:-false}
+      FRONTEND_URL: http://localhost:5173
+      # Mailpit on the Compose network. Host SMTP belongs in apps/user-service/.env.
+      SMTP_HOST: mailpit
+      SMTP_PORT: "1025"
+      SMTP_FROM: kits@local.test
+      SMTP_USE_TLS: "false"
       SECURE_COOKIES: "false"
       PYTHONPATH: /app
       # Local Docker: ensure username/password test / test1234 exists on startup.
-      SEED_TEST_USER: ${SEED_TEST_USER:-true}
+      SEED_TEST_USER: "true"
     ports:
       - "8001:8000"
     command:
@@ -122,19 +121,13 @@ services:
     build:
       context: .
       dockerfile: apps/ai-service/Dockerfile
+    env_file:
+      - path: ./apps/ai-service/.env
+        required: false
     environment:
       USER_SERVICE_URL: http://user-service:8000
+      # Overrides the localhost URL in apps/ai-service/.env. LLM_* and FRONTEND_ORIGIN stay in that file.
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@ai-postgres:5432/ai_service
-      LLM_PROVIDER: ${LLM_PROVIDER:-openai}
-      LLM_MODEL: ${LLM_MODEL:-qwen/qwen3.6-27b}
-      LLM_API_KEY: ${LLM_API_KEY:-}
-      LLM_BASE_URL: ${LLM_BASE_URL:-https://api.groq.com/openai/v1}
-      LLM_TEMPERATURE: ${LLM_TEMPERATURE:-0.2}
-      LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-30}
-      LLM_TOTAL_TIMEOUT_SECONDS: ${LLM_TOTAL_TIMEOUT_SECONDS:-45}
-      MAX_CONTEXT_MESSAGES: ${MAX_CONTEXT_MESSAGES:-12}
-      MAX_CONTEXT_TOKENS: ${MAX_CONTEXT_TOKENS:-6000}
-      FRONTEND_ORIGIN: ${AI_FRONTEND_ORIGIN:-http://localhost:5173,http://localhost:5174,http://localhost:8081,http://127.0.0.1:5173,http://127.0.0.1:5174,http://127.0.0.1:8081}
     ports:
       - "3004:3000"
     depends_on:

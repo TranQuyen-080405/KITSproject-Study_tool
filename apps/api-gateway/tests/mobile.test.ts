@@ -18,6 +18,17 @@ describe("mobile-only gateway", () => {
     expect(res.status).toBe(204); expect(res.headers["access-control-allow-origin"]).toBe("http://localhost:8081");
     expect(res.headers["access-control-allow-credentials"]).toBe("true");
   });
+  it.each(["http://localhost", "https://localhost", "capacitor://localhost"])(
+    "allows Capacitor origin %s",
+    async (origin) => {
+      const res = await request(app()).options("/api/v1/content/flashcards")
+        .set("Origin", origin)
+        .set("Access-Control-Request-Headers", "authorization,x-client-platform");
+      expect(res.status).toBe(204);
+      expect(res.headers["access-control-allow-origin"]).toBe(origin);
+      expect(res.headers["access-control-allow-headers"]).toContain("X-Client-Platform");
+    },
+  );
   it("does not grant CORS access to an arbitrary origin", async () => {
     const res = await request(app()).options("/api/v1/content/flashcards").set("Origin", "https://other.example");
     expect(res.headers["access-control-allow-origin"]).toBeUndefined();

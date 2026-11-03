@@ -5,7 +5,7 @@ describe("formatWaitRemaining", () => {
   const now = Date.parse("2026-08-26T10:00:00.000Z");
 
   it("shows due label when next review is in the past", () => {
-    expect(formatWaitRemaining("2026-08-26T09:00:00.000Z", now)).toBe("Đến hạn");
+    expect(formatWaitRemaining("2026-08-26T09:00:00.000Z", now)).toBe("Đến lượt");
     expect(isReviewDue("2026-08-26T09:00:00.000Z", now)).toBe(true);
     expect(getWaitRemainingMs("2026-08-26T09:00:00.000Z", now)).toBe(0);
   });
@@ -14,5 +14,10 @@ describe("formatWaitRemaining", () => {
     expect(formatWaitRemaining("2026-08-26T10:30:00.000Z", now)).toBe("Còn 30 phút");
     expect(formatWaitRemaining("2026-08-26T14:00:00.000Z", now)).toBe("Còn 4 giờ");
     expect(formatWaitRemaining("2026-08-28T10:00:00.000Z", now)).toBe("Còn 2 ngày");
+  });
+
+  it("does not mark an invalid review time as due", () => {
+    expect(formatWaitRemaining("not-a-date", now)).toBe("Chưa có lịch ôn");
+    expect(isReviewDue("not-a-date", now)).toBe(false);
   });
 });

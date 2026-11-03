@@ -16,9 +16,8 @@ function vars(url) {
   } catch (error) { if (error.code !== "ENOENT") throw error; return {}; }
 }
 const local = vars(new URL("../../.env", import.meta.url));
-const root = vars(new URL("../../../../.env", import.meta.url));
 const databaseUrl = process.env.ANALYTICS_TEST_DATABASE_URL || process.env.ANALYTICS_DATABASE_URL ||
-  root.ANALYTICS_DATABASE_URL || local.ANALYTICS_DATABASE_URL || local.DATABASE_URL ||
+  local.ANALYTICS_DATABASE_URL || local.DATABASE_URL ||
   "postgresql://postgres:postgres@localhost:5432/analytics_service";
 const url = new URL(databaseUrl.replace("postgresql+psycopg://", "postgresql://").replace("postgresql+asyncpg://", "postgresql://"));
 if (!["localhost", "127.0.0.1"].includes(url.hostname)) throw new Error("This test runner requires local PostgreSQL");

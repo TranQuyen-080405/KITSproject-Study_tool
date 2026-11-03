@@ -13,7 +13,7 @@ Không dùng một database dùng chung cho mọi service. `docker-compose.yml` 
 - `ai-postgres` → `ai_service`
 - `analytics-postgres` → `analytics_service`
 
-URL mẫu nằm trong `.env.example`.
+URL nằm trong `.env` của từng service.
 
 ## 3. Cách thức hoạt động
 
@@ -33,11 +33,11 @@ SQL cơ bản (sẽ gặp sau này): `SELECT`, `INSERT`, `UPDATE`, `DELETE`.
 
 ## 5. Ví dụ thực tế từ Source Code
 
-[`.env.example`](../../.env.example):
+`apps/user-service/.env` và `apps/content-service/.env`:
 
 ```env
-USER_DATABASE_URL=postgresql://postgres:postgres@localhost:5433/user_service
-CONTENT_DATABASE_URL=postgresql://postgres:postgres@localhost:5434/content_service
+USER_DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/user_service
+CONTENT_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/content_service
 ```
 
 Trong Compose (rút gọn):
