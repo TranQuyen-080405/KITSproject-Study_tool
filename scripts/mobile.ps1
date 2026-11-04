@@ -13,11 +13,32 @@ if (-not $env:ANDROID_HOME -and (Test-Path "$env:LOCALAPPDATA/Android/Sdk")) {
 if ($env:ANDROID_HOME) {
     $env:Path = "$env:ANDROID_HOME/platform-tools;$env:ANDROID_HOME/emulator;$env:Path"
 }
+function Resolve-Jdk21 {
+    $javaExe = if ($env:JAVA_HOME) { Join-Path $env:JAVA_HOME 'bin\java.exe' } else { $null }
+    if ($javaExe -and (Test-Path -LiteralPath $javaExe)) { return }
+    $roots = @(
+        'C:\Program Files\Eclipse Adoptium',
+        'C:\Program Files\Java',
+        'C:\Program Files\Microsoft',
+        'C:\Program Files\Android\Android Studio\jbr'
+    )
+    foreach ($root in $roots) {
+        if (-not (Test-Path -LiteralPath $root)) { continue }
+        $hit = Get-ChildItem -LiteralPath $root -Recurse -Filter 'java.exe' -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -match '\\bin\\java\.exe$' -and $_.FullName -match 'jdk-?21|jbr' } |
+            Select-Object -First 1
+        if ($hit) {
+            $env:JAVA_HOME = Split-Path -Parent (Split-Path -Parent $hit.FullName)
+            return
+        }
+    }
+    throw "JDK 21 was not found. JAVA_HOME is '$env:JAVA_HOME', and that folder is missing. Install Temurin 21 and point JAVA_HOME at its jdk-21 folder."
+}
 function Need-Command([string]$Command, [string]$HelpText) {
     if (-not (Get-Command $Command -ErrorAction SilentlyContinue)) { throw "$Command is missing. $HelpText" }
 }
 function Sync-Capacitor([switch]$LiveReload) {
-    $env:VITE_API_URL = if ($env:VITE_API_URL) { $env:VITE_API_URL } else { 'http://10.0.2.2:3000' }
+    $env:VITE_API_URL = if ($env:VITE_API_URL) { $env:VITE_API_URL } else { 'https://kitsproject-study-tool.onrender.com' }
     $env:MOBILE_ALLOW_CLEARTEXT = 'true'
     if ($LiveReload) {
         $env:CAP_SERVER_URL = if ($env:CAP_SERVER_URL) { $env:CAP_SERVER_URL } else { 'http://10.0.2.2:5173' }
@@ -69,17 +90,31 @@ switch ($Mode) {
     }
     'android' {
         Need-Command 'corepack' 'Install Node.js 22 LTS and enable Corepack.'
-        Need-Command 'java' 'Install JDK 21 and configure JAVA_HOME.'
         Need-Command 'adb' 'Install Android Studio, SDK Platform-Tools, and set ANDROID_HOME.'
+        Resolve-Jdk21
         Sync-Capacitor
-        & corepack pnpm --filter '@korean-learning/mobile' exec cap run android
-        exit $LASTEXITCODE
+        $androidDir = Join-Path $projectRoot 'apps\mobile\android'
+        Push-Location $androidDir
+        try {
+            & .\gradlew.bat assembleDebug
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        } finally {
+            Pop-Location
+        }
+        $apk = Join-Path $androidDir 'app\build\outputs\apk\debug\app-debug.apk'
+        Write-Host "APK: $apk"
+        $connected = & adb devices | Select-String -Pattern "`tdevice$"
+        if ($connected) {
+            & adb install -r $apk
+            exit $LASTEXITCODE
+        }
+        Write-Host 'No phone or emulator is connected. Copy the APK onto the phone and install it.'
     }
     'dev' {
         Need-Command 'corepack' 'Install Node.js 22 LTS and enable Corepack.'
         Need-Command 'adb' 'Start an Android emulator before live reload.'
         Sync-Capacitor -LiveReload
-        Write-Host 'Capacitor will load Vite from 10.0.2.2:5173. Keep corepack pnpm run:all running.'
+        Write-Host 'Capacitor will load Vite from 10.0.2.2:5173. API calls go to the Render gateway.'
         & corepack pnpm --filter '@korean-learning/mobile' exec cap run android
         exit $LASTEXITCODE
     }

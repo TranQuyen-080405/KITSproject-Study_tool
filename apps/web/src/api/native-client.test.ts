@@ -13,7 +13,7 @@ let session = {
 vi.mock("../lib/runtime", () => ({
   isNativeAndroid: true,
   requestCredentials: "omit",
-  resolveApiUrl: (path: string) => path.startsWith("/api/") ? `http://10.0.2.2:3000${path}` : path,
+  resolveApiUrl: (path: string) => path.startsWith("/api/") ? `https://kitsproject-study-tool.onrender.com${path}` : path,
 }));
 
 vi.mock("../lib/session-storage", () => ({
@@ -38,7 +38,7 @@ describe("Capacitor Android API client", () => {
     vi.stubGlobal("window", { dispatchEvent: vi.fn() });
   });
 
-  it("uses the emulator Gateway and native refresh-token contract", async () => {
+  it("uses the Render Gateway and native refresh-token contract", async () => {
     const fetch = vi.fn().mockImplementation(async (url: string, init: RequestInit) => {
       const headers = new Headers(init.headers);
       expect(headers.get("X-Client-Platform")).toBe("android");
@@ -59,7 +59,7 @@ describe("Capacitor Android API client", () => {
 
     await apiRequest("/api/v1/content/flashcards");
 
-    expect(fetch.mock.calls[0][0]).toBe("http://10.0.2.2:3000/api/v1/content/flashcards");
+    expect(fetch.mock.calls[0][0]).toBe("https://kitsproject-study-tool.onrender.com/api/v1/content/flashcards");
     expect(session.accessToken).toBe("renewed");
     expect(session.refreshToken).toBe("refresh-new");
   });

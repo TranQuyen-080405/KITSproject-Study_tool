@@ -370,3 +370,23 @@ Format mỗi mục (do script tạo):
 - Đưa biến LLM ra env của service gốc
 - Backend Render đọc LLM_API_KEY, LLM_MODEL và LLM_BASE_URL từ env của service, không lấy file .env trong ai-service
 ----------------------------------------
+
+--- Trần Quyền <2026-11-04 09:27>------
+- Bật user service trước khi migrate
+- Gateway trong container tổng luôn gọi user service nội bộ, đăng nhập không còn chờ Prisma xong
+----------------------------------------
+
+--- Trần Quyền <2026-11-04 10:29>------
+- App Android gọi backend Render
+- Bản cài mobile dùng https://kitsproject-study-tool.onrender.com làm API, không còn trỏ máy ảo
+----------------------------------------
+
+--- Trần Quyền <2026-11-04 10:38>------
+- Build APK khi không có máy Android
+- mobile:android tạo app-debug.apk bằng Gradle và JDK 21, không cần điện thoại cắm sẵn
+----------------------------------------
+
+--- Trần Quyền <2026-11-04 15:48>------
+- Giữ gateway khi một service nền thoát
+- Container không đóng cổng Render chỉ vì user, AI, content hoặc analytics dừng
+----------------------------------------

@@ -28,9 +28,9 @@ Gateway, so mobile development uses the full stack:
 corepack pnpm mobile:backend
 ```
 
-The Android emulator reaches the host Gateway at `http://10.0.2.2:3000`.
-Override `VITE_API_URL` before syncing when using a physical device or a
-deployed HTTPS Gateway.
+The installable app calls `https://kitsproject-study-tool.onrender.com`.
+Set `VITE_API_URL=http://10.0.2.2:3000` before syncing only when the emulator
+should use a Gateway running on the host machine.
 
 ## Build and run
 
